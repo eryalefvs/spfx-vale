@@ -1,0 +1,19 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "useGulp": false,
+    "plusBeta": false,
+    "isCreatingSolution": false,
+    "nodeVersion": "22.23.1",
+    "sdksVersions": {},
+    "version": "1.23.2",
+    "libraryName": "battery-forms",
+    "libraryId": "ac4e9132-89b4-483a-bdb7-50532a345b6d",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "battery-forms",
+    "solutionShortDescription": "battery-forms description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

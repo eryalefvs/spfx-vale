@@ -1,0 +1,594 @@
+// InputBatteries.module.scss
+// Estilos do WebPart de Gestão de Baterias — Dark/Light theme
+
+.root {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #F1F5F9;
+  --bg-input: #F8FAFC;
+  --bg-stripe: #FAFBFC;
+  --border-primary: #E2E8F0;
+  --border-light: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.06);
+  --accent: #2563EB;
+  --accent-light: #EFF6FF;
+  --danger: #DC2626;
+  --danger-light: #FEF2F2;
+  --warning: #F97316;
+  --warning-light: #FFF7ED;
+  --success: #22C55E;
+  --success-light: #F0FDF4;
+
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.rootDark {
+  --bg-primary: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-surface-hover: #334155;
+  --bg-input: #1E293B;
+  --bg-stripe: #253347;
+  --border-primary: #334155;
+  --border-light: #1E293B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --accent: #3B82F6;
+  --accent-light: #1E3A5F;
+  --danger-light: #3B1C1C;
+  --warning-light: #3B2A10;
+  --success-light: #1A3B1A;
+}
+
+// ─── Header ────────────────────────────────────────────────────────────────
+
+.header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-primary);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.3s ease;
+}
+
+.headerLeft {
+  h1 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.75rem;
+    color: var(--text-subtle);
+    margin: 2px 0 0;
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.themeToggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}
+
+// ─── Content Area ──────────────────────────────────────────────────────────
+
+.content {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────
+
+.tabBar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border-primary);
+}
+
+.tab {
+  padding: 10px 24px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.tabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+// ─── Cards ─────────────────────────────────────────────────────────────────
+
+.card {
+  background-color: var(--bg-surface);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.cardHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cardSubtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+// ─── Info Banner ───────────────────────────────────────────────────────────
+
+.infoBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background-color: var(--accent-light);
+  border: 1px solid var(--accent);
+  margin-bottom: 20px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.warningBanner {
+  composes: infoBanner;
+  background-color: var(--warning-light);
+  border-color: var(--warning);
+}
+
+.dangerBanner {
+  composes: infoBanner;
+  background-color: var(--danger-light);
+  border-color: var(--danger);
+}
+
+.successBanner {
+  composes: infoBanner;
+  background-color: var(--success-light);
+  border-color: var(--success);
+}
+
+// ─── Form Grid ─────────────────────────────────────────────────────────────
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input,
+  select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    background-color: var(--bg-input);
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+  }
+}
+
+// ─── Paste Area ────────────────────────────────────────────────────────────
+
+.pasteArea {
+  border: 2px dashed var(--border-primary);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  cursor: text;
+  transition: border-color 0.2s, background-color 0.2s;
+  margin-bottom: 20px;
+
+  &:hover,
+  &:focus {
+    border-color: var(--accent);
+    background-color: var(--accent-light);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .pasteTitle {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .pasteSubtitle {
+    font-size: 0.75rem;
+    color: var(--text-subtle);
+    margin-top: 8px;
+  }
+}
+
+// ─── Preview Table ─────────────────────────────────────────────────────────
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-primary);
+    background-color: var(--bg-stripe);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover {
+      background-color: var(--bg-surface-hover);
+    }
+  }
+}
+
+.cellInput {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background: transparent;
+
+  &:focus {
+    border-color: var(--accent);
+    background-color: var(--bg-input);
+    outline: none;
+  }
+}
+
+.cellError {
+  border-color: var(--danger) !important;
+  background-color: var(--danger-light) !important;
+}
+
+.removeBtn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-subtle);
+  font-size: 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: var(--danger);
+    background-color: var(--danger-light);
+  }
+}
+
+// ─── Action Bar ────────────────────────────────────────────────────────────
+
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.actionBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.actionBarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// ─── Location Info Card ────────────────────────────────────────────────────
+
+.locationInfo {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.locationInfoItem {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: var(--bg-surface-hover);
+  border: 1px solid var(--border-light);
+  text-align: center;
+
+  .infoValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .infoLabel {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+// ─── Replacement: battery selection ────────────────────────────────────────
+
+.batteryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.batteryChip {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  .chipSerial {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .chipMeta {
+    color: var(--text-subtle);
+    font-size: 0.68rem;
+  }
+}
+
+.batteryChipSelected {
+  border-color: var(--accent);
+  background-color: var(--accent-light);
+}
+
+// ─── Spinner / Loading ─────────────────────────────────────────────────────
+
+.spinnerOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+// ─── Accordion (Registered Batteries List) ─────────────────────────────────
+
+.accordionItem {
+  border-bottom: 1px solid var(--border-light);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.accordionHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s;
+  text-align: left;
+
+  &:hover {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+.accordionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.accordionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.accordionMeta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.accordionBadge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.accordionContent {
+  padding: 0 20px 16px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cardHeaderAccordion {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 20px;
+
+  background: transparent;
+  border: none;
+  text-align: left;
+
+  cursor: pointer;
+
+  color: inherit;
+
+  transition: background-color 0.15s ease;
+}
+
+.cardHeaderAccordion:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.03));
+}
+
+.cardHeaderAccordion:focus {
+  outline: none;
+}
+
+.cardHeaderAccordion:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.cardHeaderChevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 16px;
+}

@@ -1,0 +1,74 @@
+'RG 1107 - info_atividades': 
+Coluna	Tipo
+Título	Texto com uma linha	
+'OM'	Texto com uma linha	
+'Data_da_Atividade'	Data e Hora	
+'ipo_de_Atividade'	Opção	
+'Supervisao'	Opção	
+'Tipo_de_Local'	Opção	
+'IntegridadeAnomalias'	Texto com várias linhas	
+'IntegridadeSolucoes'	Texto com várias linhas	
+'JustificativaFaltadeInformacao'	Texto com várias linhas	
+'JustificativaSemContatoMCM'	Texto com várias linhas	
+'Observacoes_Gerais'	Texto com várias linhas	
+'Temperatura_da_Sala'	Número	
+'Tensao_Total'	Número	
+'KM'	Consulta	
+'Sede'	Consulta	
+'Responsaveis'	Consulta	
+
+
+'Baterias_SAT2':
+
+Coluna	Tipo
+'Title'	Texto com uma linha	
+'NO'	Número	
+'Banco'	Número	
+'Modelo'	Texto com uma linha	
+'Fabricante'	Texto com uma linha	
+'DataDeFabricacao'	Data e Hora	
+'Local'	Texto com uma linha	
+'KM'	Texto com uma linha	
+'IDLocal'	Consulta	
+
+
+
+'Baterias - Responsaveis':
+
+Coluna	Tipo
+'Título'	Texto com uma linha	
+'Supervisão'	Texto com uma linha	
+'Ativo'	Sim/Não	
+'Matrícula'	Texto com uma linha
+
+
+'km das LI':
+
+Coluna	Tipo	
+'Title'	Texto com uma linha	
+'Local'	Texto com uma linha	
+'km'	Texto com uma linha	
+'Sede'	Texto com uma linha	
+'Supervisao'	Texto com uma linha
+
+
+'RG 1107 - info_medicoes_baterias':
+
+Coluna	Tipo	
+'Título'	Texto com uma linha	
+'Tensao'	Texto com uma linha	
+'Resistencia'	Texto com uma linha	
+'Corrente'	Texto com uma linha	
+'Status_geral'	Texto com uma linha	
+'Status_tensao'	Texto com uma linha	
+'Status_resistencia'	Texto com uma linha	
+'ID_Atividade'	Consulta	
+'Bateria'	Consulta	
+'Data'	Data e Hora
+
+
+'Sedes':
+
+Coluna	Tipo	
+'Título'	Texto com uma linha	
+'Supervisão'	Texto com uma linha

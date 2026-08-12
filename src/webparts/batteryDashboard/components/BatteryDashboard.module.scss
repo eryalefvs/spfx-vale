@@ -1,0 +1,570 @@
+// Módulo SCSS para o Dashboard de Baterias
+// Sistema de Temas via CSS Custom Properties (Light/Dark)
+
+// ─── Theme Variables ─────────────────────────────────────────────────────────
+
+.dashboardRoot {
+  // ── Light Theme (default) ──
+  --bg-primary: #F8FAFC;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #F8FAFC;
+  --bg-input: #F8FAFC;
+  --bg-sidebar: #ffffff;
+  --bg-table-header: #F8FAFC;
+  --bg-user: #F1F5F9;
+
+  --border-primary: #E2E8F0;
+  --border-light: #F1F5F9;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --text-saude-bateria: #94A3B8;
+
+  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.06);
+  --shadow-header: none;
+
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// ── Dark Theme ──
+.dashboardRootDark {
+  --bg-primary: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-surface-hover: #334155;
+  --bg-input: #1E293B;
+  --bg-sidebar: #1E293B;
+  --bg-table-header: #1E293B;
+  --bg-user: #334155;
+
+  --border-primary: #334155;
+  --border-light: #1E293B;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+  --text-tensao-resistencia: #F8FAFC;
+
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-header: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-header);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerTitle {
+  h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.72rem;
+    color: var(--text-subtle);
+    margin: 0;
+  }
+}
+
+.logoImage {
+  height: 28px;
+  width: auto;
+}
+
+.syncInfo {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+}
+
+// ─── Theme Toggle ────────────────────────────────────────────────────────────
+
+.themeToggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-user);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}
+
+// ─── Body layout ─────────────────────────────────────────────────────────────
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.contentArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+// ─── Filter sidebar ──────────────────────────────────────────────────────────
+
+.filterSidebar {
+  overflow: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  flex-shrink: 0;
+}
+
+.filterSidebarOpen {
+  width: 240px;
+  min-width: 240px;
+}
+
+.filterSidebarClosed {
+  width: 0;
+  min-width: 0;
+}
+
+.filterSidebarInner {
+  width: 180px;
+  height: 100%;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-primary);
+  overflow-y: auto;
+  padding: 20px 16px;
+  transition: opacity 0.2s, background-color 0.3s ease;
+}
+
+.filterSidebarHidden {
+  opacity: 0;
+  padding: 0;
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  p {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    margin: 0;
+  }
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+// ─── Cards ───────────────────────────────────────────────────────────────────
+
+.card {
+  background-color: var(--bg-surface);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.cardHeader {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border-light);
+
+  .cardTitle {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .cardSubtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+}
+
+.cardBody {
+  padding: 16px 20px;
+}
+
+// ─── KPI Cards ───────────────────────────────────────────────────────────────
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.kpiCard {
+  composes: card;
+  padding: 20px;
+}
+
+.kpiIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.kpiValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin: 0;
+}
+
+.kpiLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.kpiSubtitle {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+// ─── Chart Grids ─────────────────────────────────────────────────────────────
+
+.chartRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartRow2x1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Status Badge ────────────────────────────────────────────────────────────
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ─── Table ───────────────────────────────────────────────────────────────────
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-primary);
+    background-color: var(--bg-table-header);
+  }
+
+  td {
+    padding: 11px 14px;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover {
+      background-color: var(--bg-surface-hover);
+    }
+  }
+}
+
+// ─── Pagination ──────────────────────────────────────────────────────────────
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.paginationInfo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.paginationButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// ─── Loading / Empty / Error ─────────────────────────────────────────────────
+
+.loadingOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.loadingText {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.emptySubtitle {
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+}
+
+.errorState {
+  composes: emptyState;
+
+  .errorTitle {
+    color: #DC2626;
+  }
+}
+
+// ─── Heatmap ─────────────────────────────────────────────────────────────────
+
+.heatmapGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heatmapCell {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, transform 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+}
+
+.heatmapCellLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.heatmapLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.heatmapLegendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+// ─── Search Input ────────────────────────────────────────────────────────────
+
+.searchWrapper {
+  position: relative;
+  max-width: 280px;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  outline: none;
+
+  &:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-subtle);
+  }
+}
+
+// ─── User avatar ─────────────────────────────────────────────────────────────
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background-color: var(--bg-user);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+}
+
+.userName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.userPhoto {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
