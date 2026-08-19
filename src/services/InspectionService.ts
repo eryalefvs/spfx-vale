@@ -5,7 +5,7 @@ import { ListNames } from "../constants/ListNames";
 
 export class InspectionService {
 
-    public async create(data: InspectionData): Promise<number> {
+    public async saveActivity(data: InspectionData): Promise<number> {
         const item = InspectionMapper.toSharePoint(data);
         const result = await SharePointService.sp.web.lists
         .getByTitle(ListNames.InspectionData)
