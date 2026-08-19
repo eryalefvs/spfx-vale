@@ -72,6 +72,20 @@ export interface Activity {
   justificationNoContactMCM: string;
 }
 
+export interface Sedes {
+  id: number;
+  title: string;
+  supervisao: string;
+}
+
+export interface Responsibles {
+  id: number;
+  title: string;
+  supervisao: string;
+  ativo: string;
+  matricula: string;
+}
+
 // ─── Modelos Derivados / Computados ──────────────────────────────────────────
 
 /** Filtros globais do Dashboard */
