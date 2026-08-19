@@ -1,4 +1,4 @@
-import { InspectionData } from "../models/BatteryInspection";
+import { InspectionData, Measurement } from "../models/BatteryInspection";
 
 
 export class InspectionMapper {
@@ -38,5 +38,19 @@ export class InspectionMapper {
             justificationNoContactWithMCM: item.justificationNoContactWithMCM,
             notes: item.notes
         }
+    }
+    public static toSharePointMeasurement(activyId: number, measurements: Measurement[]): any[] {
+        return measurements.map(item => ({
+            title: item.title,
+            tensao: item.tensao,
+            resistencia: item.resistencia,
+            corrente: item.corrente,
+            statusGeral: item.statusGeral,
+            statusTensao: item.statusTensao,
+            statusResistencia: item.statusResistencia,
+            idAtividade: activyId,
+            bateria: item.bateria,
+            data: item.data
+        }))
     }
 }
