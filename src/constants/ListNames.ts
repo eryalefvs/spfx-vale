@@ -9,4 +9,9 @@ export const ListNames = {
     Measurements: "RG 1107 - info_medicoes_baterias",
     Activities: "RG 1107 - info_atividades",
     Responsibles: "Baterias - Responsaveis",   // Lookup de responsáveis
+    Sedes: "Sedes",
+
+    // Listas Boa Jornada
+    BoaJornadaInfoGerais: "BoaJornadaInfoGerais",
+    BoaJornadaAtividade: "BoaJornadaAtividade"
 };
