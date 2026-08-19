@@ -53,6 +53,15 @@ export const LineChartCard: React.FC<ILineChartCardProps> = ({
                 fontSize: '0.75rem', borderRadius: 8, border: 'none',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
               }}
+              labelStyle={{
+                color: '#000000ff', // Força a data a ficar visível
+                fontWeight: 600,
+                marginBottom: '4px',
+              }}
+              itemStyle={{
+                color: '#0f172a', // Força o texto de tensão total a ficar visível
+                padding: 0,
+              }}
             />
             {referenceValue !== undefined ? (
               <ReferenceLine y={referenceValue} stroke={color} strokeDasharray="4 4" strokeOpacity={0.5} />
