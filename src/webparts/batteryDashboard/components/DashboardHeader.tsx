@@ -98,11 +98,10 @@ export const DashboardHeader: React.FC<IDashboardHeaderProps> = ({
         /> */}
         <div className={styles.headerTitle}>
           <h1>Dashboard de Saúde das Baterias</h1>
-          <p>PRO-001107 · Manutenção Preventiva de Baterias</p>
         </div>
 
         <div className={styles.filterHeader}>
-          <span className={styles.filterLabel}>Local:   </span>
+          <span className={styles.filterLabel}>Local:</span>
 
           <Dropdown
             placeholder="Todos"
