@@ -9,7 +9,7 @@ import {
 export interface IBarChartCardProps {
   title: string;
   subtitle?: string;
-  data: Array<{ label: string; [key: string]: string | number }>;
+  data: Array<{ label: string;[key: string]: string | number }>;
   dataKey: string;
   nameKey: string;
   unit?: string;
@@ -63,6 +63,15 @@ export const BarChartCard: React.FC<IBarChartCardProps> = ({
               contentStyle={{
                 fontSize: '0.75rem', borderRadius: 8, border: 'none',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              }}
+              labelStyle={{
+                color: '#000000ff', // Força o número de série (ESB-WI ...) a ficar visível/cinza escuro
+                fontWeight: 600,
+                marginBottom: '4px',
+              }}
+              itemStyle={{
+                color: '#0f172a', // Força o texto 'voltage : 13.85V' a ficar preto/escuro
+                padding: 0,
               }}
             />
             <Bar dataKey={dataKey} radius={isVertical ? [0, 4, 4, 0] : [4, 4, 0, 0]}>
