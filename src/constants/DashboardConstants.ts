@@ -235,4 +235,14 @@ export const SP_FIELDS = {
     Justificativa_Falta_Info: 'Justificativa_x002d_FaltadeInfor', // truncado pelo SP
     Justificativa_Sem_Contato: 'Justificativa_x002d_SemContatoMC', // truncado pelo SP
   },
+  Responsibles: {
+    Title: 'Title',  // Nome
+    Supervisao: 'Supervis_x00e3_o',
+    Ativo: 'Ativo',
+    Matricula: 'Matr_x00ed_cula'
+  },
+  Sedes: {
+    Title: 'Title',  // 'Sedes' é o Title
+    Supervisao: 'Supervis_x00e3_o'
+  }
 } as const;
