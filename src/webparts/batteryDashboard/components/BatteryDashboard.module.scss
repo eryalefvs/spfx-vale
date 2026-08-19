@@ -180,16 +180,23 @@
 .filterHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  // justify-content: space-between;
+  margin-left: 20px;
 
-  p {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    margin: 0;
-  }
+  // p {
+  //   font-weight: 600;
+  //   font-size: 0.875rem;
+  //   color: var(--text-primary);
+  //   margin: 0;
+  // }
 }
+
+// .filterHeader {
+//     display: flex;
+//     align-items: center;
+//     margin-left: 20px;
+//     height: 100%;
+// }
 
 .filterGroup {
   display: flex;
@@ -205,6 +212,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 6px;
+  margin-right: 8px;
 }
 
 // ─── Cards ───────────────────────────────────────────────────────────────────
@@ -567,4 +575,137 @@
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+// ─── Activity History Table ────────────────────────────────────────────────
+
+.activityRow {
+  transition: background-color 0.12s;
+
+  &:hover {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+.expandedRow {
+  background-color: var(--bg-surface-hover);
+}
+
+.expandedContent {
+  padding: 8px 16px 16px 36px;
+  animation: fadeSlideDown 0.2s ease-out;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.innerTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+
+  th {
+    background-color: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+.measurementBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background-color: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+// ─── Toggle Buttons ────────────────────────────────────────────────────────
+
+.toggleBtn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-primary);
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+// ─── Chart Card ────────────────────────────────────────────────────────────
+
+.chartCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chartCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chartCardTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.chartCardSubtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
 }
