@@ -33,3 +33,17 @@ export interface BatteryInspectionFormData {
     roomTemperature: string;
     attachments: string[];
 }
+
+export interface Measurement {
+    id?: number;
+    title: string;
+    tensao: string;
+    resistencia: string;
+    corrente: string;
+    statusGeral: string;
+    statusTensao: string;
+    statusResistencia: string;
+    idAtividade: number;
+    bateria: string;
+    data: Date;
+}
