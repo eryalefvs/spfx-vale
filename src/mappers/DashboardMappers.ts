@@ -5,7 +5,7 @@
 // Todos recebem `any` pois os items vêm sem $select (sem tipo forte).
 // ============================================================================
 
-import { Location, Battery, Measurement, Activity } from '../models/DashboardModels';
+import { Location, Battery, Measurement, Activity, Sedes, Responsibles } from '../models/DashboardModels';
 import { SP_FIELDS } from '../constants/DashboardConstants';
 
 /** Converte valor texto ou número para number, com fallback 0 */
@@ -94,6 +94,26 @@ export function mapSPToLocation(item: any): Location {
     supervisao: item[f.Supervisao] || '',
     localKm: item[f.localKm] || ''
   };
+}
+
+export function mapToSede(item: any): Sedes {
+  const f = SP_FIELDS.Sedes;
+  return {
+    id: item.Id || item.ID || 0,
+    title: item[f.Title] || '',
+    supervisao: item[f.Supervisao] || '',
+  }
+}
+
+export function mapToResponsibles(item: any): Responsibles {
+  const f = SP_FIELDS.Responsibles
+  return {
+    id: item.Id || item.ID || 0,
+    title: item[f.Title] || '',
+    supervisao: item[f.Supervisao] || '',
+    ativo: item[f.Ativo] || '',
+    matricula: item[f.Matricula] || '',
+  }
 }
 
 let _batteryDebugLogged = false;
