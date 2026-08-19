@@ -155,11 +155,11 @@ function aggregateTrend(
   }
 
   return Object.keys(groups)
-    .map(function(date: string): TrendPoint {
+    .map(function (date: string): TrendPoint {
       const g = groups[date];
       return { date: date, value: +(g.sum / g.count).toFixed(2) };
     })
-    .sort(function(a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
+    .sort(function (a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
 }
 
 /** Tendência da tensão média ao longo do tempo */
@@ -249,11 +249,11 @@ export function getTotalVoltageTrend(
   }
 
   return Object.keys(groups)
-    .map(function(date: string): TrendPoint {
+    .map(function (date: string): TrendPoint {
       const g = groups[date];
       return { date: date, value: +(g.sum / g.count).toFixed(2) };
     })
-    .sort(function(a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
+    .sort(function (a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
 }
 
 // ─── Gráficos de Barras por Bateria ──────────────────────────────────────────
@@ -265,7 +265,7 @@ export function getBatteryVoltages(
 ): Array<{ label: string; voltage: number; fill: string }> {
   return getBatteryLastReadings(batteries, measurements)
     .filter((r) => r.measurement !== undefined)
-    .sort((a, b) => a.voltage - b.voltage)
+    //.sort((a, b) => a.voltage - b.voltage)
     .map((r) => ({
       label: r.battery.serialNumber,
       voltage: r.voltage,
@@ -280,12 +280,172 @@ export function getBatteryResistances(
 ): Array<{ label: string; resistance: number; fill: string }> {
   return getBatteryLastReadings(batteries, measurements)
     .filter((r) => r.measurement !== undefined)
-    .sort((a, b) => b.resistance - a.resistance)
+    //.sort((a, b) => b.resistance - a.resistance)
     .map((r) => ({
       label: r.battery.serialNumber,
       resistance: r.resistance,
       fill: getStatusColor(r.status),
     }));
+}
+
+// ─── Gráficos por Banco ──────────────────────────────────────────────────────
+
+/** Retorna números de bancos únicos das baterias filtradas */
+export function getUniqueBankNumbers(batteries: Battery[]): number[] {
+  const banks = new Set<number>();
+  for (const b of batteries) banks.add(b.bankNumber);
+  return Array.from(banks).sort();
+}
+
+/** Tensão por bateria filtrada por banco */
+export function getBatteryVoltagesByBank(
+  batteries: Battery[],
+  measurements: Measurement[],
+  bankNumber: number
+): Array<{ label: string; voltage: number; fill: string }> {
+  const bankBatteries = batteries.filter((b) => b.bankNumber === bankNumber);
+  return getBatteryVoltages(bankBatteries, measurements);
+}
+
+/** Resistência por bateria filtrada por banco */
+export function getBatteryResistancesByBank(
+  batteries: Battery[],
+  measurements: Measurement[],
+  bankNumber: number
+): Array<{ label: string; resistance: number; fill: string }> {
+  const bankBatteries = batteries.filter((b) => b.bankNumber === bankNumber);
+  return getBatteryResistances(bankBatteries, measurements);
+}
+
+/** Tendência da resistência média por banco (retorna dados para gráfico multi-linha) */
+export interface MultiTrendPoint {
+  date: string;
+  [key: string]: number | string; // banco1, banco2, etc.
+}
+
+export function getResistanceTrendByBank(
+  batteries: Battery[],
+  measurements: Measurement[]
+): MultiTrendPoint[] {
+  const banks = getUniqueBankNumbers(batteries);
+
+  // Mapa de serial → banco
+  const serialToBank: Record<string, number> = {};
+  for (const b of batteries) serialToBank[b.serialNumber] = b.bankNumber;
+
+  // Agrupar por data e banco
+  const groups: Record<string, Record<number, { sum: number; count: number }>> = {};
+  for (const m of measurements) {
+    const bank = serialToBank[m.batterySerialNumber];
+    if (bank === undefined) continue;
+    const dateKey = formatDateISO(m.date);
+    if (!groups[dateKey]) groups[dateKey] = {};
+    if (!groups[dateKey][bank]) groups[dateKey][bank] = { sum: 0, count: 0 };
+    groups[dateKey][bank].sum += m.resistance;
+    groups[dateKey][bank].count += 1;
+  }
+
+  return Object.keys(groups)
+    .sort()
+    .map((date) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const point: any = { date };
+      for (const bank of banks) {
+        const g = groups[date][bank];
+        point['banco' + bank] = g ? +(g.sum / g.count).toFixed(2) : 0;
+      }
+      return point as MultiTrendPoint;
+    });
+}
+
+// ─── Evolução de Baterias (Tabela Pivoteada) ─────────────────────────────────
+
+export interface BatteryEvolutionRow {
+  batteryId: number;
+  serialNumber: string;
+  bankNumber: number;
+  sequenceNumber: number;
+  values: Array<{ date: string; voltage: number; resistance: number }>;
+  voltageDelta: number;     // diferença entre primeira e última leitura
+  resistanceDelta: number;
+  trend: 'stable' | 'rising' | 'critical'; // tendência da resistência
+}
+
+/** Gera dados de evolução para a tabela pivoteada */
+export function getBatteryEvolution(
+  batteries: Battery[],
+  measurements: Measurement[]
+): { dates: string[]; rows: BatteryEvolutionRow[] } {
+  // Todas as datas únicas ordenadas
+  const dateSet = new Set<string>();
+  for (const m of measurements) dateSet.add(formatDateISO(m.date));
+  const dates = Array.from(dateSet).sort();
+
+  // Agrupar medições por bateria e data
+  const measurementMap: Record<string, Record<string, { voltage: number; resistance: number; count: number }>> = {};
+  for (const m of measurements) {
+    const serial = m.batterySerialNumber;
+    if (!measurementMap[serial]) measurementMap[serial] = {};
+    const dateKey = formatDateISO(m.date);
+    if (!measurementMap[serial][dateKey]) {
+      measurementMap[serial][dateKey] = { voltage: 0, resistance: 0, count: 0 };
+    }
+    const entry = measurementMap[serial][dateKey];
+    entry.voltage += m.voltage;
+    entry.resistance += m.resistance;
+    entry.count += 1;
+  }
+
+  const rows: BatteryEvolutionRow[] = batteries
+    .filter((b) => measurementMap[b.serialNumber])
+    .sort((a, b) => a.bankNumber - b.bankNumber || a.sequenceNumber - b.sequenceNumber)
+    .map((bat) => {
+      const batData = measurementMap[bat.serialNumber] || {};
+      const values = dates
+        .filter((d) => batData[d])
+        .map((d) => {
+          const entry = batData[d];
+          return {
+            date: d,
+            voltage: +(entry.voltage / entry.count).toFixed(2),
+            resistance: +(entry.resistance / entry.count).toFixed(2),
+          };
+        });
+
+      // Calcular deltas
+      let voltageDelta = 0;
+      let resistanceDelta = 0;
+      let trend: 'stable' | 'rising' | 'critical' = 'stable';
+
+      if (values.length >= 2) {
+        const first = values[0];
+        const last = values[values.length - 1];
+        voltageDelta = +(last.voltage - first.voltage).toFixed(2);
+        resistanceDelta = +(last.resistance - first.resistance).toFixed(2);
+
+        // Classificar tendência da resistência
+        if (Math.abs(resistanceDelta) <= 0.5) {
+          trend = 'stable';
+        } else if (resistanceDelta > 0.5 && resistanceDelta <= 1.5) {
+          trend = 'rising';
+        } else if (resistanceDelta > 1.5) {
+          trend = 'critical';
+        }
+      }
+
+      return {
+        batteryId: bat.id,
+        serialNumber: bat.serialNumber,
+        bankNumber: bat.bankNumber,
+        sequenceNumber: bat.sequenceNumber,
+        values,
+        voltageDelta,
+        resistanceDelta,
+        trend,
+      };
+    });
+
+  return { dates, rows };
 }
 
 // ─── Top 10 / Rankings ───────────────────────────────────────────────────────
@@ -392,8 +552,8 @@ export function getLocationHealthSummaries(
         criticalCount: lastReadings.filter((r) => r.status === 'CRITICO').length,
         healthPercentage: lastReadings.length > 0
           ? Math.round(
-              (lastReadings.filter((r) => r.status === 'EXCELENTE').length / lastReadings.length) * 100
-            )
+            (lastReadings.filter((r) => r.status === 'EXCELENTE').length / lastReadings.length) * 100
+          )
           : 100,
         avgVoltage: withValues.length > 0
           ? +(withValues.reduce((s, r) => s + r.voltage, 0) / withValues.length).toFixed(2)
@@ -421,8 +581,8 @@ export function getActivitiesPerMonth(activities: Activity[]): ActivitySummaryDa
   }
 
   return Object.keys(months)
-    .map(function(month: string): ActivitySummaryData { return { month: month, count: months[month] }; })
-    .sort(function(a: ActivitySummaryData, b: ActivitySummaryData): number {
+    .map(function (month: string): ActivitySummaryData { return { month: month, count: months[month] }; })
+    .sort(function (a: ActivitySummaryData, b: ActivitySummaryData): number {
       // Ordena cronologicamente
       const parseKey = (k: string): number => {
         const parts = k.split('/');
