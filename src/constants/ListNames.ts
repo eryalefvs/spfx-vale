@@ -5,7 +5,7 @@ export const ListNames = {
 
     // Listas do Dashboard
     Locations: "km das LI",
-    Batteries: "Baterias_SAT2",
+    Batteries: "Baterias_CSAT",
     Measurements: "RG 1107 - info_medicoes_baterias",
     Activities: "RG 1107 - info_atividades",
     Responsibles: "Baterias - Responsaveis",   // Lookup de responsáveis
