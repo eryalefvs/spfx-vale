@@ -7,18 +7,22 @@ import * as React from 'react';
 import styles from './BatteryDashboard.module.scss';
 import { useDashboard } from '../../../contexts/DashboardContext';
 import { DashboardHeader } from './DashboardHeader';
-//import { DashboardFilters } from './DashboardFilters';
 import { KPICards } from './KPICards';
 import { LineChartCard } from './LineChartCard';
+import { MultiLineChartCard } from './MultiLineChartCard';
 import { BarChartCard } from './BarChartCard';
 import { HeatMapBattery } from './HeatMapBattery';
-import { InspectionHistoryTable } from './InspectionHistoryTable';
+import { ActivityHistoryTable } from './ActivityHistoryTable';
+import { BatteryEvolutionTable } from './BatteryEvolutionTable';
 import { LoadingOverlay } from './LoadingOverlay';
 import { ErrorState } from './ErrorState';
 import { BatteryDetailsPanel } from './BatteryDetailsPanel';
 import {
-  getTotalVoltageTrend, getResistanceTrend,
-  getBatteryVoltages, getBatteryResistances,
+  getTotalVoltageTrend,
+  getUniqueBankNumbers,
+  getBatteryVoltagesByBank,
+  getBatteryResistancesByBank,
+  getResistanceTrendByBank,
 } from '../../../utils/dashboardUtils';
 
 export interface IDashboardPageProps {
@@ -49,31 +53,46 @@ export const DashboardPage: React.FC<IDashboardPageProps> = ({ userDisplayName, 
 
   // ── Dados computados para gráficos (via useMemo) ──────────────────────
 
+  // Bancos únicos das baterias filtradas
+  const bankNumbers = React.useMemo(
+    () => getUniqueBankNumbers(ctx.filteredBatteries),
+    [ctx.filteredBatteries]
+  );
+
   // Tensão Total — derivada das medições filtradas → atividades correspondentes
   const totalVoltageTrend = React.useMemo(
     () => getTotalVoltageTrend(ctx.filteredMeasurements, ctx.rawData.activities),
     [ctx.filteredMeasurements, ctx.rawData.activities]
   );
 
-  // Resistência Média ao longo do tempo (das medições individuais)
-  const resistanceTrend = React.useMemo(
-    () => getResistanceTrend(ctx.filteredMeasurements),
-    [ctx.filteredMeasurements]
-  );
-
-  // Tensão por bateria (barras)
-  const batteryVoltages = React.useMemo(
-    () => getBatteryVoltages(ctx.filteredBatteries, ctx.filteredMeasurements),
+  // Resistência Média por Banco (gráfico multi-linha)
+  const resistanceTrendByBank = React.useMemo(
+    () => getResistanceTrendByBank(ctx.filteredBatteries, ctx.filteredMeasurements),
     [ctx.filteredBatteries, ctx.filteredMeasurements]
   );
 
-  // Resistência por bateria (barras)
-  const batteryResistances = React.useMemo(
-    () => getBatteryResistances(ctx.filteredBatteries, ctx.filteredMeasurements),
-    [ctx.filteredBatteries, ctx.filteredMeasurements]
-  );
+  const resistanceLines = React.useMemo(() => {
+    return bankNumbers.map((bank, idx) => ({
+      dataKey: 'banco' + bank,
+      label: 'Banco ' + bank,
+      color: ['#F97316', '#8B5CF6', '#10B981', '#EC4899'][idx % 4],
+    }));
+  }, [bankNumbers]);
 
+  // Tensão e Resistência por bateria — POR BANCO
+  const voltagesByBank = React.useMemo(() => {
+    return bankNumbers.map((bank) => ({
+      bank,
+      data: getBatteryVoltagesByBank(ctx.filteredBatteries, ctx.filteredMeasurements, bank),
+    }));
+  }, [bankNumbers, ctx.filteredBatteries, ctx.filteredMeasurements]);
 
+  const resistancesByBank = React.useMemo(() => {
+    return bankNumbers.map((bank) => ({
+      bank,
+      data: getBatteryResistancesByBank(ctx.filteredBatteries, ctx.filteredMeasurements, bank),
+    }));
+  }, [bankNumbers, ctx.filteredBatteries, ctx.filteredMeasurements]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -109,16 +128,11 @@ export const DashboardPage: React.FC<IDashboardPageProps> = ({ userDisplayName, 
       />
 
       <div className={styles.body}>
-        {/* <DashboardFilters
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        /> */}
-
         <div className={styles.contentArea}>
           {/* Row 1: KPI Cards */}
           <KPICards kpis={ctx.kpis} />
 
-          {/* Row 2: Tensão Total (atividades) + Resistência Média (medições) */}
+          {/* Row 2: Tensão Total + Resistência Média por Banco */}
           <div className={styles.chartRow2}>
             <LineChartCard
               title="Evolução da Tensão Total"
@@ -128,42 +142,47 @@ export const DashboardPage: React.FC<IDashboardPageProps> = ({ userDisplayName, 
               color="#2563EB"
               unit=" V"
             />
-            <LineChartCard
+            <MultiLineChartCard
               title="Evolução da Resistência Média"
-              subtitle="Média de todas as baterias filtradas"
-              data={resistanceTrend}
-              dataKey="value"
-              color="#F97316"
+              subtitle={bankNumbers.length > 1 ? 'Separada por banco' : 'Média geral'}
+              data={resistanceTrendByBank}
+              lines={resistanceLines}
               unit=" Ω"
             />
           </div>
 
-          {/* Row 3: Tensão por Bateria + Resistência por Bateria */}
-          <div className={styles.chartRow2}>
-            <BarChartCard
-              title="Tensão por Bateria"
-              subtitle="Última leitura individual de cada bateria"
-              data={batteryVoltages}
-              dataKey="voltage"
-              nameKey="label"
-              unit=" V"
-              layout="horizontal"
-              height={260}
-            />
-            <BarChartCard
-              title="Resistência por Bateria"
-              subtitle="Última leitura individual de cada bateria"
-              data={batteryResistances}
-              dataKey="resistance"
-              nameKey="label"
-              unit=" Ω"
-              layout="horizontal"
-              height={260}
-            />
-          </div>
+          {/* Row 3: Gráficos por Banco (Tensão + Resistência lado a lado) */}
+          {bankNumbers.map((bank) => {
+            const voltData = voltagesByBank.find((v) => v.bank === bank);
+            const resData = resistancesByBank.find((r) => r.bank === bank);
 
+            return (
+              <div key={'bank-charts-' + bank} className={styles.chartRow2}>
+                <BarChartCard
+                  title={'Tensão por Bateria — Banco ' + bank}
+                  subtitle={'Última leitura individual'}
+                  data={voltData ? voltData.data : []}
+                  dataKey="voltage"
+                  nameKey="label"
+                  unit=" V"
+                  layout="horizontal"
+                  height={260}
+                />
+                <BarChartCard
+                  title={'Resistência por Bateria — Banco ' + bank}
+                  subtitle={'Última leitura individual'}
+                  data={resData ? resData.data : []}
+                  dataKey="resistance"
+                  nameKey="label"
+                  unit=" Ω"
+                  layout="horizontal"
+                  height={260}
+                />
+              </div>
+            );
+          })}
 
-          {/* Row 5: Heatmap do Banco */}
+          {/* Row 4: Heatmap do Banco */}
           <HeatMapBattery
             batteries={ctx.filteredBatteries}
             measurements={ctx.filteredMeasurements}
@@ -171,11 +190,17 @@ export const DashboardPage: React.FC<IDashboardPageProps> = ({ userDisplayName, 
             onSelectBattery={handleSelectBattery}
           />
 
-          {/* Row 6: Tabela de Medições */}
-          <InspectionHistoryTable
+          {/* Row 5: Tabela de Evolução */}
+          <BatteryEvolutionTable
+            batteries={ctx.filteredBatteries}
+            measurements={ctx.filteredMeasurements}
+            onSelectBattery={handleSelectBattery}
+          />
+
+          {/* Row 6: Histórico de Atividades */}
+          <ActivityHistoryTable
             measurements={ctx.filteredMeasurements}
             batteries={ctx.filteredBatteries}
-            locations={ctx.rawData.locations}
             activities={ctx.filteredActivities}
             onSelectBattery={handleSelectBattery}
           />
