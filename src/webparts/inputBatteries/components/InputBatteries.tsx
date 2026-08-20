@@ -178,7 +178,7 @@ const InputBatteries: React.FC<IInputBatteriesProps> = ({ userDisplayName }) => 
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1>Gestão de Baterias</h1>
-          <p>Inserção e substituição de baterias · Baterias_SAT2</p>
+          <p>Inserção e substituição de baterias</p>
         </div>
         <div className={styles.headerRight}>
           <button className={styles.themeToggle} onClick={handleToggleTheme} title={isDark ? 'Modo Claro' : 'Modo Escuro'}>
