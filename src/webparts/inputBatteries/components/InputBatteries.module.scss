@@ -592,3 +592,95 @@
   flex-shrink: 0;
   margin-left: 16px;
 }
+
+// ─── Sede Selector ─────────────────────────────────────────────────────────
+
+.sedeSelector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.sedeButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.sedeButtonActive {
+  background-color: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sedeCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: var(--bg-surface-hover);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+// ─── Location Chips ────────────────────────────────────────────────────────
+
+.locationChip {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  }
+}
+
+.locationChipSelected {
+  border-color: var(--accent);
+  background-color: var(--accent-light);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+.chipStatus {
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+// ─── Selected Location Detail ──────────────────────────────────────────────
+
+.selectedLocationDetail {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface-hover);
+  animation: slideDown 0.2s ease-out;
+}
