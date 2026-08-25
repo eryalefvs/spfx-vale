@@ -1,29 +1,983 @@
-.batteryFormsSpfx {
-  overflow: hidden;
-  padding: 1em;
-  color: "[theme:bodyText, default: #323130]";
-  color: var(--bodyText);
+// ============================================================================
+// Design System — Formulário de Inspeção de Baterias
+// Tema: Vale Light | Cores: Verde Vale #007E7A, Amarelo #ECB11F
+// ============================================================================
+
+// ─── Variáveis ───────────────────────────────────────────────────────────────
+
+$vale-green: #007E7A;
+$vale-green-dark: #006560;
+$vale-green-light: #0ABB98;
+$vale-yellow: #ECB11F;
+
+$bg-page: #F5F7FA;
+$bg-card: #FFFFFF;
+$bg-hover: #F0F4F8;
+
+$border-color: #E2E8F0;
+$border-focus: $vale-green;
+
+$text-primary: #1E293B;
+$text-secondary: #475569;
+$text-muted: #94A3B8;
+
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+$transition: all 0.2s ease;
+
+// ─── Container Principal ─────────────────────────────────────────────────────
+
+.wizardContainer {
+  width: 100%;
+  min-height: 100vh;
+  background: $bg-page;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: $text-primary;
 }
 
-.welcome {
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.wizardHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: $vale-green;
+  box-shadow: $shadow-md;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 32px;
+}
+
+.headerLogo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+
+.progressBarContainer {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.progressBar {
+  height: 100%;
+  background: $vale-yellow;
+  transition: width 0.4s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+// ─── Stepper ─────────────────────────────────────────────────────────────────
+
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 24px 16px;
+  background: $bg-card;
+  border-bottom: 1px solid $border-color;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.stepperItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.stepperCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 600;
+  transition: $transition;
+}
+
+.stepperLabel {
+  font-size: 11px;
+  color: $text-muted;
+  text-align: center;
+  white-space: nowrap;
+  transition: $transition;
+}
+
+.stepperItemActive {
+  .stepperCircle {
+    background: $vale-green;
+    color: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba($vale-green, 0.15);
+  }
+
+  .stepperLabel {
+    color: $vale-green;
+    font-weight: 600;
+  }
+}
+
+.stepperItemCompleted {
+  .stepperCircle {
+    background: $vale-green-light;
+    color: #FFFFFF;
+  }
+
+  .stepperLabel {
+    color: $text-secondary;
+  }
+}
+
+// ─── Page Content ────────────────────────────────────────────────────────────
+
+.pageContent {
+  width: 100%;
+}
+
+// ─── Cover Page ──────────────────────────────────────────────────────────────
+
+.coverPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 62px);
+  padding: 48px 32px;
+  background: linear-gradient(160deg, #F0FAF9 0%, $bg-page 50%, #FFF9E8 100%);
+}
+
+.coverContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 680px;
+  width: 100%;
+}
+
+.coverImageContainer {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 50%;
+  background: rgba($vale-green, 0.06);
+  border: 3px solid rgba($vale-green, 0.12);
+}
+
+.coverImage {
+  max-width: 140px;
+  max-height: 140px;
+  object-fit: contain;
+}
+
+.coverTitle {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 700;
+  color: $text-primary;
+  letter-spacing: -0.5px;
+}
+
+.coverSubtitle {
+  max-width: 520px;
+  margin: 16px 0 32px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: $text-secondary;
+}
+
+.coverInfoCard {
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  padding: 24px 28px;
+  margin-bottom: 36px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-left: 4px solid $vale-green;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  text-align: left;
+
+  h2 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: $vale-green;
+  }
+
+  p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: $text-secondary;
+  }
+}
+
+// ─── Page Container (Genérico) ───────────────────────────────────────────────
+
+.pageContainer {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+  box-sizing: border-box;
+}
+
+// ─── Page Header ─────────────────────────────────────────────────────────────
+
+.pageHeader {
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+}
+
+// ─── Form Card ───────────────────────────────────────────────────────────────
+
+.formCard {
+  padding: 28px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+}
+
+.sectionTitle {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.sectionHint {
+  margin: 0 0 20px;
+  font-size: 14px;
+  color: $text-secondary;
+}
+
+// ─── Form Grid ───────────────────────────────────────────────────────────────
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #CBD5E1;
+    border-radius: $radius-sm;
+    background: $bg-card;
+    font-family: inherit;
+    font-size: 14px;
+    color: $text-primary;
+    transition: $transition;
+
+    &::placeholder {
+      color: $text-muted;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $vale-green;
+      box-shadow: 0 0 0 3px rgba($vale-green, 0.1);
+    }
+
+    &:disabled {
+      background: #F1F5F9;
+      color: $text-muted;
+      cursor: not-allowed;
+    }
+  }
+
+  select[multiple] {
+    min-height: 120px;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.fieldHint {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+// ─── Botões ──────────────────────────────────────────────────────────────────
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: $radius-sm;
+  background: $vale-green;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    background: $vale-green-dark;
+    box-shadow: $shadow-sm;
+  }
+
+  &:disabled {
+    background: #94A3B8;
+    cursor: not-allowed;
+  }
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: 1px solid $vale-green;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $vale-green;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    background: rgba($vale-green, 0.06);
+  }
+}
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+
+.navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid $border-color;
+}
+
+// ─── Toggle Buttons (Sim/Não) ────────────────────────────────────────────────
+
+.questionSection {
+  text-align: center;
+  padding: 12px 0;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+}
+
+.questionHint {
+  max-width: 560px;
+  margin: 0 auto 24px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: $text-secondary;
+}
+
+.toggleGroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.toggleButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 36px;
+  border: 2px solid $border-color;
+  border-radius: $radius-md;
+  background: $bg-card;
+  color: $text-secondary;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition;
+  min-width: 140px;
+  justify-content: center;
+
+  &:hover {
+    border-color: #94A3B8;
+    background: $bg-hover;
+  }
+}
+
+.toggleButtonActive {
+  border-color: $vale-green;
+  background: rgba($vale-green, 0.06);
+  color: $vale-green;
+  box-shadow: 0 0 0 3px rgba($vale-green, 0.1);
+}
+
+.toggleButtonDanger {
+  border-color: #DC2626;
+  background: rgba(220, 38, 38, 0.05);
+  color: #DC2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+// ─── Info Cards (Parâmetros, 5S) ─────────────────────────────────────────────
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.infoCard {
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  transition: $transition;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+  }
+}
+
+.infoCardIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-md;
+  background: rgba($vale-green, 0.08);
+  font-size: 24px;
+}
+
+.infoCardContent {
+  flex: 1;
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: $text-secondary;
+  }
+}
+
+// ─── Upload Zone ─────────────────────────────────────────────────────────────
+
+.uploadZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 24px;
+  border: 2px dashed #CBD5E1;
+  border-radius: $radius-md;
+  background: #F8FAFC;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    border-color: $vale-green;
+    background: rgba($vale-green, 0.03);
+  }
+}
+
+.uploadZoneActive {
+  border-color: $vale-green;
+  background: rgba($vale-green, 0.06);
+  box-shadow: 0 0 0 4px rgba($vale-green, 0.08);
+}
+
+.uploadIcon {
+  font-size: 40px;
+  opacity: 0.7;
+}
+
+.uploadText {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: $text-secondary;
+}
+
+.uploadHint {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+// ─── File List ───────────────────────────────────────────────────────────────
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: $radius-sm;
+}
+
+.fileIcon {
+  font-size: 20px;
+}
+
+.fileName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileBadge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: $vale-green;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fileRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #DC2626;
+  font-size: 14px;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    background: rgba(220, 38, 38, 0.1);
+  }
+}
+
+// ─── Data Table ──────────────────────────────────────────────────────────────
+
+.tableContainer {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th,
+  td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid $border-color;
+  }
+
+  th {
+    background: #F8FAFC;
+    font-weight: 600;
+    color: $text-secondary;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  td {
+    color: $text-primary;
+  }
+
+  tbody tr:hover {
+    background: $bg-hover;
+  }
+}
+
+// ─── Status Badge ────────────────────────────────────────────────────────────
+
+.statusBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+// ─── Verification Summary ────────────────────────────────────────────────────
+
+.verificationSummary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px 16px;
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+}
+
+.summaryValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: $vale-green;
+}
+
+.summaryLabel {
+  font-size: 12px;
+  color: $text-secondary;
   text-align: center;
 }
 
-.welcomeImage {
-  width: 100%;
-  max-width: 420px;
+// ─── Warning Banner ──────────────────────────────────────────────────────────
+
+.warningBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-left: 4px solid #F97316;
+  border-radius: $radius-sm;
+
+  p {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #9A3412;
+    line-height: 1.5;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
-.links {
-  a {
-    text-decoration: none;
-    color: "[theme:link, default:#03787c]";
-    color: var(--link); // note: CSS Custom Properties support is limited to modern browsers only
+.warningIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 
-    &:hover {
-      text-decoration: underline;
-      color: "[theme:linkHovered, default: #014446]";
-      color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
-    }
+// ─── Error / Success Messages ────────────────────────────────────────────────
+
+.errorMessage {
+  padding: 12px 16px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: $radius-sm;
+  color: #991B1B;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+.successMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 32px;
+
+  h1 {
+    margin: 16px 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 16px;
+    color: $text-secondary;
+  }
+}
+
+.successIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #F0FDF4;
+  border: 3px solid #22C55E;
+  color: #22C55E;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.successDetails {
+  margin-top: 24px;
+  padding: 20px 28px;
+  background: #F8FAFC;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  text-align: left;
+
+  p {
+    margin: 6px 0;
+    font-size: 14px;
+    color: $text-primary;
+  }
+}
+
+// ─── Summary Grid ────────────────────────────────────────────────────────────
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.summaryItemLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summaryItemValue {
+  font-size: 15px;
+  color: $text-primary;
+  line-height: 1.5;
+}
+
+// ─── Status Summary ──────────────────────────────────────────────────────────
+
+.statusSummary {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border-color;
+}
+
+.statusSummaryItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: $text-secondary;
+}
+
+// ─── Loading / Error States ──────────────────────────────────────────────────
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: $text-secondary;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 16px;
+  color: #DC2626;
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .headerContent {
+    padding: 12px 20px;
+  }
+
+  .headerTitle {
+    font-size: 15px;
+  }
+
+  .stepper {
+    padding: 14px 16px 12px;
+    justify-content: flex-start;
+  }
+
+  .stepperItem {
+    min-width: 56px;
+  }
+
+  .stepperCircle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .stepperLabel {
+    font-size: 10px;
+  }
+
+  .coverPage {
+    padding: 32px 20px;
+  }
+
+  .coverTitle {
+    font-size: 28px;
+  }
+
+  .coverImageContainer {
+    width: 160px;
+    height: 160px;
+  }
+
+  .coverImage {
+    max-width: 110px;
+    max-height: 110px;
+  }
+
+  .pageContainer {
+    padding: 24px 20px 40px;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullWidth {
+    grid-column: auto;
+  }
+
+  .verificationSummary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .toggleButton {
+    padding: 12px 24px;
+    min-width: 110px;
+    font-size: 14px;
+  }
+
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statusSummary {
+    flex-wrap: wrap;
   }
 }
