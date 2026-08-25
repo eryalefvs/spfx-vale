@@ -1,44 +1,76 @@
+// ============================================================================
+// CrmBoaJornada.tsx
+// Componente raiz — gerencia navegação entre as views.
+// ============================================================================
+
 import * as React from 'react';
 import styles from './CrmBoaJornada.module.scss';
 import type { ICrmBoaJornadaProps } from './ICrmBoaJornadaProps';
-import { escape } from '@microsoft/sp-lodash-subset';
-import welcomeDark from '../assets/welcome-dark.png';
-import welcomeLight from '../assets/welcome-light.png';
+import { HomePage } from './HomePage';
+import { BoaJornadaForm } from './BoaJornadaForm';
+import { HistoryList } from './HistoryList';
+import { HistoryDetail } from './HistoryDetail';
 
-export default class CrmBoaJornada extends React.Component<ICrmBoaJornadaProps> {
-  public render(): React.ReactElement<ICrmBoaJornadaProps> {
-    const {
-      description,
-      isDarkTheme,
-      environmentMessage,
-      userDisplayName
-    } = this.props;
+type AppView = 'home' | 'form' | 'history' | 'detail';
 
-    return (
-      <section className={`${styles.crmBoaJornada}`}>
-        <div className={styles.welcome}>
-          <img alt="" src={isDarkTheme ? welcomeDark : welcomeLight} className={styles.welcomeImage} />
-          <h2>Well done, {escape(userDisplayName)}!</h2>
-          <div>{environmentMessage}</div>
-          <div>Web part property value: <strong>{escape(description)}</strong></div>
-        </div>
-        <div>
-          <h3>Welcome to SharePoint Framework!</h3>
-          <p>
-            The SharePoint Framework (SPFx) is a extensibility model for Microsoft Viva, Microsoft Teams and SharePoint. It&#39;s the easiest way to extend Microsoft 365 with automatic Single Sign On, automatic hosting and industry standard tooling.
-          </p>
-          <h4>Learn more about SPFx development:</h4>
-          <ul className={styles.links}>
-            <li><a href="https://aka.ms/spfx" target="_blank" rel="noreferrer">SharePoint Framework Overview</a></li>
-            <li><a href="https://aka.ms/spfx-yeoman-graph" target="_blank" rel="noreferrer">Use Microsoft Graph in your solution</a></li>
-            <li><a href="https://aka.ms/spfx-yeoman-teams" target="_blank" rel="noreferrer">Build for Microsoft Teams using SharePoint Framework</a></li>
-            <li><a href="https://aka.ms/spfx-yeoman-viva" target="_blank" rel="noreferrer">Build for Microsoft Viva Connections using SharePoint Framework</a></li>
-            <li><a href="https://aka.ms/spfx-yeoman-store" target="_blank" rel="noreferrer">Publish SharePoint Framework applications to the marketplace</a></li>
-            <li><a href="https://aka.ms/spfx-yeoman-api" target="_blank" rel="noreferrer">SharePoint Framework API reference</a></li>
-            <li><a href="https://aka.ms/m365pnp" target="_blank" rel="noreferrer">Microsoft 365 Developer Community</a></li>
-          </ul>
-        </div>
-      </section>
-    );
-  }
+interface IAppState {
+  currentView: AppView;
+  selectedJornadaId: number | undefined;
 }
+
+const CrmBoaJornada: React.FC<ICrmBoaJornadaProps> = () => {
+  const [state, setState] = React.useState<IAppState>({
+    currentView: 'home',
+    selectedJornadaId: undefined,
+  });
+
+  const navigateTo = (view: AppView, jornadaId?: number): void => {
+    setState({
+      currentView: view,
+      selectedJornadaId: jornadaId || undefined,
+    });
+  };
+
+  const renderView = (): React.ReactNode => {
+    switch (state.currentView) {
+      case 'home':
+        return (
+          <HomePage
+            onNewJornada={() => navigateTo('form')}
+            onViewHistory={() => navigateTo('history')}
+          />
+        );
+      case 'form':
+        return (
+          <BoaJornadaForm
+            onBack={() => navigateTo('home')}
+            onSaved={() => navigateTo('home')}
+          />
+        );
+      case 'history':
+        return (
+          <HistoryList
+            onBack={() => navigateTo('home')}
+            onSelectJornada={(id) => navigateTo('detail', id)}
+          />
+        );
+      case 'detail':
+        return (
+          <HistoryDetail
+            jornadaId={state.selectedJornadaId!}
+            onBack={() => navigateTo('history')}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className={styles.appContainer}>
+      {renderView()}
+    </div>
+  );
+};
+
+export default CrmBoaJornada;
