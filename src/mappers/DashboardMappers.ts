@@ -70,20 +70,20 @@ let _locationDebugLogged = false;
 export function mapSPToLocation(item: any): Location {
   const f = SP_FIELDS.Locations;
 
-  if (!_locationDebugLogged) {
-    _locationDebugLogged = true;
-    console.log('[DEBUG] Primeiro item raw de LOCAIS:', JSON.stringify(item, null, 2));
-    console.log('[DEBUG] localKm raw:', item[f.localKm], '| local-km raw:', item['local-km'], '| local_x002d_km raw:', item['local_x002d_km']);
-  }
+  // if (!_locationDebugLogged) {
+  //   _locationDebugLogged = true;
+  //   console.log('[DEBUG] Primeiro item raw de LOCAIS:', JSON.stringify(item, null, 2));
+  //   console.log('[DEBUG] localKm raw:', item[f.localKm], '| local-km raw:', item['local-km'], '| local_x002d_km raw:', item['local_x002d_km']);
+  // }
 
   const locationType = item[f.Local];
 
-  if (!locationType) {
-    console.warn(
-      '[Location] Local sem tipo:',
-      item
-    );
-  }
+  // if (!locationType) {
+  //   console.warn(
+  //     '[Location] Local sem tipo:',
+  //     item
+  //   );
+  // }
 
   return {
     id: item.Id || item.ID || 0,
@@ -125,11 +125,11 @@ export function mapSPToBattery(item: any): Battery {
   const f = SP_FIELDS.Batteries;
 
   // Debug: logar o primeiro item raw para verificar nomes dos campos
-  if (!_batteryDebugLogged) {
-    _batteryDebugLogged = true;
-    console.log('[DEBUG] Primeiro item raw de BATERIAS:', JSON.stringify(item, null, 2));
-    console.log('[DEBUG] NO raw:', item[f.NO], '| Banco raw:', item[f.Banco], '| IDLocalId raw:', item[f.IDLocalId]);
-  }
+  // if (!_batteryDebugLogged) {
+  //   _batteryDebugLogged = true;
+  //   console.log('[DEBUG] Primeiro item raw de BATERIAS:', JSON.stringify(item, null, 2));
+  //   console.log('[DEBUG] NO raw:', item[f.NO], '| Banco raw:', item[f.Banco], '| IDLocalId raw:', item[f.IDLocalId]);
+  // }
   return {
     id: item.Id || item.ID || 0,
     serialNumber: item[f.Title] || item.Title || '',
@@ -152,12 +152,12 @@ export function mapSPToMeasurement(item: any): Measurement {
   const f = SP_FIELDS.Measurements;
 
   // Debug: logar o primeiro item raw para verificar nomes dos campos
-  if (!_measurementDebugLogged) {
-    _measurementDebugLogged = true;
-    console.log('[DEBUG] Primeiro item raw de MEDIÇÕES:', JSON.stringify(item, null, 2));
-    console.log('[DEBUG] Campos SP_FIELDS.Measurements:', JSON.stringify(f));
-    console.log('[DEBUG] Tensao raw:', item[f.Tensao], '| Resistencia raw:', item[f.Resistencia], '| ID_AtividadeId raw:', item[f.ID_AtividadeId]);
-  }
+  // if (!_measurementDebugLogged) {
+  //   _measurementDebugLogged = true;
+  //   console.log('[DEBUG] Primeiro item raw de MEDIÇÕES:', JSON.stringify(item, null, 2));
+  //   console.log('[DEBUG] Campos SP_FIELDS.Measurements:', JSON.stringify(f));
+  //   console.log('[DEBUG] Tensao raw:', item[f.Tensao], '| Resistencia raw:', item[f.Resistencia], '| ID_AtividadeId raw:', item[f.ID_AtividadeId]);
+  // }
   return {
     id: item.Id || item.ID || 0,
     title: item[f.Title] || item.Title || '',
@@ -182,11 +182,11 @@ let _activityDebugLogged = false;
 export function mapSPToActivity(item: any): Activity {
   const f = SP_FIELDS.Activities;
 
-  if (!_activityDebugLogged) {
-    _activityDebugLogged = true;
-    console.log('[DEBUG] Primeiro item raw de ATIVIDADES:', JSON.stringify(item, null, 2));
-    console.log('[DEBUG] Tensao_Total raw:', item[f.Tensao_Total], '| Responsaveis raw:', item[f.Responsaveis], '| Data_da_Atividade raw:', item[f.Data_da_Atividade]);
-  }
+  // if (!_activityDebugLogged) {
+  //   _activityDebugLogged = true;
+  //   console.log('[DEBUG] Primeiro item raw de ATIVIDADES:', JSON.stringify(item, null, 2));
+  //   console.log('[DEBUG] Tensao_Total raw:', item[f.Tensao_Total], '| Responsaveis raw:', item[f.Responsaveis], '| Data_da_Atividade raw:', item[f.Data_da_Atividade]);
+  // }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activity: any = {
