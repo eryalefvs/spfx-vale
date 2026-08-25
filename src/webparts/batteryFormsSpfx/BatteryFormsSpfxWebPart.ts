@@ -6,36 +6,32 @@ import {
   type IPropertyPaneConfiguration,
   PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
-import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
+import { BaseClientSideWebPart, WebPartContext } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
+import { InspectionWizard } from '../batteryFormsSpfx/components/InspectionWizard';
 
 import * as strings from 'BatteryFormsSpfxWebPartStrings';
-import BatteryFormsSpfx from './components/BatteryFormsSpfx';
-import { IBatteryFormsSpfxProps } from './components/IBatteryFormsSpfxProps';
 
-export interface IBatteryFormsSpfxWebPartProps {
-  description: string;
+export interface IInspectionWizardProps {
+  context: WebPartContext;
 }
 
-export default class BatteryFormsSpfxWebPart extends BaseClientSideWebPart<IBatteryFormsSpfxWebPartProps> {
+export default class BatteryFormsSpfxWebPart extends BaseClientSideWebPart<IInspectionWizardProps> {
 
   private _isDarkTheme: boolean = false;
   private _environmentMessage: string = '';
 
   public render(): void {
-    const element: React.ReactElement<IBatteryFormsSpfxProps> = React.createElement(
-      BatteryFormsSpfx,
+    const element: React.ReactElement = React.createElement(
+      InspectionWizard,
       {
-        description: this.properties.description,
-        isDarkTheme: this._isDarkTheme,
-        environmentMessage: this._environmentMessage,
-        userDisplayName: this.context.pageContext.user.displayName
+        context: this.context
       }
     );
 
     ReactDom.render(element, this.domElement);
   }
-  
+
   protected async onInit(): Promise<void> { // Método chamado quando o web part é inicializado; retorna uma Promise que resolve quando a inicialização estiver completa
     await super.onInit(); // Chama o método onInit da classe base para garantir que a inicialização padrão seja realizada
     SharePointService.initialize(this.context); // Inicializa o serviço de SharePoint com o contexto do web part
