@@ -115,22 +115,24 @@ export function useDashboardFilters(
   }, [locations, filters.locationType, filters.supervisao, filters.sede, filters.locationId]);
 
   const filteredBatteries = useMemo(() => {
-    return filterBatteries(batteries, filters, locations);
+    // Filtrar apenas baterias ativas (Status = 'Ativa') antes de aplicar os filtros do dashboard
+    const activeBatteries = batteries.filter((b) => b.status === 'Ativa');
+    return filterBatteries(activeBatteries, filters, locations);
   }, [batteries, filters, locations]);
 
-  const filteredBatterySerials = useMemo(() => {
-    return new Set(filteredBatteries.map((b) => b.serialNumber));
+  const filteredBatteryIds = useMemo(() => {
+    return new Set(filteredBatteries.map((b) => b.id));
   }, [filteredBatteries]);
 
   const filteredMeasurements = useMemo(() => {
-    return filterMeasurements(measurements, filters, filteredBatterySerials);
-  }, [measurements, filters, filteredBatterySerials]);
+    return filterMeasurements(measurements, filters, filteredBatteryIds);
+  }, [measurements, filters, filteredBatteryIds]);
 
   const filteredActivities = useMemo(() => {
     return filterActivities(activities, filters);
   }, [activities, filters]);
 
-  return {
+  return useMemo(() => ({
     filters,
     filteredBatteries,
     filteredMeasurements,
@@ -147,5 +149,22 @@ export function useDashboardFilters(
     setSearchText,
     clearFilters,
     hasActiveFilters,
-  };
+  }), [
+    filters,
+    filteredBatteries,
+    filteredMeasurements,
+    filteredActivities,
+    filteredLocations,
+    hasActiveFilters,
+    setLocationId,
+    setLocationType,
+    setSupervisao,
+    setSede,
+    setBankNumber,
+    setStatus,
+    setStartDate,
+    setEndDate,
+    setSearchText,
+    clearFilters,
+  ]);
 }

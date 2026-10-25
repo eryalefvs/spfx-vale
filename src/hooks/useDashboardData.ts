@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { DashboardService } from '../services/DashboardService';
-import { Location, Battery, Measurement, Activity } from '../models/DashboardModels';
+import { Location, Battery, Measurement, Activity, Sedes } from '../models/DashboardModels';
 import { LoadingState } from '../types/DashboardTypes';
 
 export interface DashboardData {
@@ -14,6 +14,7 @@ export interface DashboardData {
   batteries: Battery[];
   measurements: Measurement[];
   activities: Activity[];
+  sedes: Sedes[];
 }
 
 export interface UseDashboardDataResult {
@@ -29,6 +30,7 @@ const emptyData: DashboardData = {
   batteries: [],
   measurements: [],
   activities: [],
+  sedes: [],
 };
 
 /**

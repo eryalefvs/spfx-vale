@@ -10,11 +10,11 @@ import {
   Battery, Measurement, Location, Activity,
   DashboardSummary, DashboardFilters, TrendPoint,
   StatusDistribution, BankComparison, BatteryLastReading,
-  LocationHealthSummary, ActivitySummaryData,
+  LocationHealthSummary, ActivitySummaryData, DisabledBankInfo,
 } from '../models/DashboardModels';
 import {
   VOLTAGE_THRESHOLDS, RESISTANCE_THRESHOLDS,
-  STATUS_COLORS, STATUS_LABELS,
+  STATUS_COLORS, STATUS_LABELS, LOCATION_RULES,
 } from '../constants/DashboardConstants';
 
 // ─── Status / Saúde ──────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ export function parseStatus(statusStr: string): BatteryStatus {
   const normalized = statusStr.toUpperCase().trim();
   if (normalized === 'EXCELENTE') return 'EXCELENTE';
   if (normalized === 'ALERTA' || normalized === 'ATENCAO' || normalized === 'ATENÇÃO') return 'ALERTA';
-  if (normalized === 'CRITICO' || normalized === 'CRÍTICO') return 'CRITICO';
+  if (normalized === 'CRITICO' || normalized === 'CRÍTICO' || normalized === 'RUIM') return 'CRITICO';
   return 'EXCELENTE';  // fallback
 }
 
@@ -143,39 +143,112 @@ export function calculateKPIs(
 /** Agrupa medições por data e calcula média de um campo numérico */
 function aggregateTrend(
   measurements: Measurement[],
-  getValue: (m: Measurement) => number
+  getValue: (m: Measurement) => number,
+  activities: Activity[]
 ): TrendPoint[] {
-  const groups: Record<string, { sum: number; count: number }> = {};
+  const activityMap: Record<number, Activity> = {};
 
-  for (const m of measurements) {
-    const dateKey = formatDateISO(m.date);
-    if (!groups[dateKey]) groups[dateKey] = { sum: 0, count: 0 };
-    groups[dateKey].sum += getValue(m);
+  for (const activity of activities) {
+    activityMap[activity.id] = activity;
+  }
+
+  // Agrupa as medições pela data da atividade
+  const groups: Record<
+    string,
+    { sum: number; count: number }
+  > = {};
+
+  for (const measurement of measurements) {
+
+    if (!measurement.activityId) {
+      continue;
+    }
+
+    const activity = activityMap[measurement.activityId];
+
+    if (!activity) {
+      continue;
+    }
+
+    const activityDate = new Date(activity.activityDate);
+
+    if (isNaN(activityDate.getTime())) {
+      continue;
+    }
+
+    const dateKey = formatDateISO(activityDate);
+    const value = getValue(measurement);
+
+    if (!Number.isFinite(value)) {
+      continue;
+    }
+
+    if (!groups[dateKey]) {
+      groups[dateKey] = {
+        sum: 0,
+        count: 0
+      };
+    }
+
+    groups[dateKey].sum += value;
     groups[dateKey].count += 1;
   }
 
   return Object.keys(groups)
-    .map(function (date: string): TrendPoint {
-      const g = groups[date];
-      return { date: date, value: +(g.sum / g.count).toFixed(2) };
+    .map((date): TrendPoint => {
+
+      const group = groups[date];
+
+      return {
+        date,
+        value: +(group.sum / group.count).toFixed(2)
+      };
     })
-    .sort(function (a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // const activityMap: Record<number, Activity> = {};
+  // for (const activity of activities) {
+  //   activityMap[activity.id] = activity;
+  // }
+
+  // const groups: Record<string, { sum: number; count: number }> = {};
+  // const activityDateMap: Record<number, Date> = {};
+  // for (const a of activities) {
+  //   activityDateMap[a.id] = new Date(a.activityDate);
+  // }
+
+  // const dateSet = new Set<string>();
+  // for (const m of measurements) {
+  //   const dateKey = m.activityId ? activityDateMap[m.activityId] : undefined;
+  //   if (dateKey) dateSet.add(formatDateISO(dateKey));
+  // }
+
+  // const dates = Array.from(dateSet).sort();
+
+
+  // return Object.keys(groups)
+  //   .map(function (date: string): TrendPoint {
+  //     const g = groups[date];
+  //     return { date: date, value: +(g.sum / g.count).toFixed(2) };
+  //   })
+  //   .sort(function (a: TrendPoint, b: TrendPoint): number { return a.date.localeCompare(b.date); });
 }
 
 /** Tendência da tensão média ao longo do tempo */
-export function getVoltageTrend(measurements: Measurement[]): TrendPoint[] {
-  return aggregateTrend(measurements, (m) => m.voltage);
+export function getVoltageTrend(measurements: Measurement[], activities: Activity[]): TrendPoint[] {
+  return aggregateTrend(measurements, (m) => m.voltage, activities);
 }
 
 /** Tendência da resistência média ao longo do tempo */
-export function getResistanceTrend(measurements: Measurement[]): TrendPoint[] {
-  return aggregateTrend(measurements, (m) => m.resistance);
+export function getResistanceTrend(measurements: Measurement[], activities: Activity[]): TrendPoint[] {
+  return aggregateTrend(measurements, (m) => m.resistance, activities);
 }
 
 /** Tendência de tensão de um banco específico de um local */
 export function getBankVoltageTrend(
   measurements: Measurement[],
   batteries: Battery[],
+  activities: Activity[],
   bankNumber: number,
   locationId?: number
 ): TrendPoint[] {
@@ -192,22 +265,59 @@ export function getBankVoltageTrend(
     bankSerials.has(m.batterySerialNumber)
   );
 
-  return aggregateTrend(bankMeasurements, (m) => m.voltage);
+  return aggregateTrend(bankMeasurements, (m) => m.voltage, activities);
 }
 
 /** Tendência de uma bateria individual */
 export function getBatteryTrend(
   measurements: Measurement[],
-  serialNumber: string,
+  id: number,
+  activities: Activity[],
   getValue: (m: Measurement) => number = (m) => m.voltage
 ): TrendPoint[] {
+  // Mapa: Activity.id -> Activity
+  const activityMap: Record<number, Activity> = {};
+
+  for (const activity of activities) {
+    activityMap[activity.id] = activity;
+  }
+
   const batteryMeasurements = measurements
-    .filter((m) => m.batterySerialNumber === serialNumber)
+    .filter((m) => m.batteryId === id)
+    .map((m) => {
+      // A medição aponta para a atividade através do ID_Atividade
+      const activity = m.activityId
+        ? activityMap[m.activityId]
+        : undefined;
+
+      if (!activity) {
+        return undefined;
+      }
+
+      const activityDate = new Date(activity.activityDate);
+
+      if (isNaN(activityDate.getTime())) {
+        return undefined;
+      }
+
+      return {
+        measurement: m,
+        date: activityDate
+      };
+    })
+    .filter(
+      (
+        item
+      ): item is {
+        measurement: Measurement;
+        date: Date;
+      } => item !== undefined
+    )
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  return batteryMeasurements.map((m) => ({
-    date: formatDateISO(m.date),
-    value: +(getValue(m)).toFixed(2),
+  return batteryMeasurements.map(({ measurement, date }) => ({
+    date: formatDateISO(date),
+    value: +getValue(measurement).toFixed(2),
   }));
 }
 
@@ -262,12 +372,12 @@ export function getTotalVoltageTrend(
 export function getBatteryVoltages(
   batteries: Battery[],
   measurements: Measurement[]
-): Array<{ label: string; voltage: number; fill: string }> {
+): Array<{ label: number; voltage: number; fill: string }> {
   return getBatteryLastReadings(batteries, measurements)
     .filter((r) => r.measurement !== undefined)
     //.sort((a, b) => a.voltage - b.voltage)
     .map((r) => ({
-      label: r.battery.serialNumber,
+      label: r.battery.sequenceNumber,
       voltage: r.voltage,
       fill: getStatusColor(r.status),
     }));
@@ -277,12 +387,12 @@ export function getBatteryVoltages(
 export function getBatteryResistances(
   batteries: Battery[],
   measurements: Measurement[]
-): Array<{ label: string; resistance: number; fill: string }> {
+): Array<{ label: number; resistance: number; fill: string }> {
   return getBatteryLastReadings(batteries, measurements)
     .filter((r) => r.measurement !== undefined)
     //.sort((a, b) => b.resistance - a.resistance)
     .map((r) => ({
-      label: r.battery.serialNumber,
+      label: r.battery.sequenceNumber,
       resistance: r.resistance,
       fill: getStatusColor(r.status),
     }));
@@ -302,7 +412,7 @@ export function getBatteryVoltagesByBank(
   batteries: Battery[],
   measurements: Measurement[],
   bankNumber: number
-): Array<{ label: string; voltage: number; fill: string }> {
+): Array<{ label: number; voltage: number; fill: string }> {
   const bankBatteries = batteries.filter((b) => b.bankNumber === bankNumber);
   return getBatteryVoltages(bankBatteries, measurements);
 }
@@ -312,7 +422,7 @@ export function getBatteryResistancesByBank(
   batteries: Battery[],
   measurements: Measurement[],
   bankNumber: number
-): Array<{ label: string; resistance: number; fill: string }> {
+): Array<{ label: number; resistance: number; fill: string }> {
   const bankBatteries = batteries.filter((b) => b.bankNumber === bankNumber);
   return getBatteryResistances(bankBatteries, measurements);
 }
@@ -325,8 +435,16 @@ export interface MultiTrendPoint {
 
 export function getResistanceTrendByBank(
   batteries: Battery[],
-  measurements: Measurement[]
+  measurements: Measurement[],
+  activities: Activity[]
 ): MultiTrendPoint[] {
+
+  const activityMap: Record<number, Activity> = {};
+
+  for (const activity of activities) {
+    activityMap[activity.id] = activity;
+  }
+
   const banks = getUniqueBankNumbers(batteries);
 
   // Mapa de serial → banco
@@ -338,7 +456,10 @@ export function getResistanceTrendByBank(
   for (const m of measurements) {
     const bank = serialToBank[m.batterySerialNumber];
     if (bank === undefined) continue;
-    const dateKey = formatDateISO(m.date);
+    if (!m.activityId) continue;
+    const activity = activityMap[m.activityId];
+    if (!activity) continue;
+    const dateKey = formatDateISO(activity.activityDate);
     if (!groups[dateKey]) groups[dateKey] = {};
     if (!groups[dateKey][bank]) groups[dateKey][bank] = { sum: 0, count: 0 };
     groups[dateKey][bank].sum += m.resistance;
@@ -374,19 +495,31 @@ export interface BatteryEvolutionRow {
 /** Gera dados de evolução para a tabela pivoteada */
 export function getBatteryEvolution(
   batteries: Battery[],
-  measurements: Measurement[]
+  measurements: Measurement[],
+  activities: Activity[]
 ): { dates: string[]; rows: BatteryEvolutionRow[] } {
-  // Todas as datas únicas ordenadas
+  // Mapa activityId → activityDate para derivar datas das atividades
+  const activityDateMap: Record<number, Date> = {};
+  for (const a of activities) {
+    activityDateMap[a.id] = a.activityDate;
+  }
+
+  // Todas as datas únicas ordenadas (derivadas das atividades)
   const dateSet = new Set<string>();
-  for (const m of measurements) dateSet.add(formatDateISO(m.date));
+  for (const m of measurements) {
+    const actDate = m.activityId ? activityDateMap[m.activityId] : undefined;
+    if (actDate) dateSet.add(formatDateISO(actDate));
+  }
   const dates = Array.from(dateSet).sort();
 
-  // Agrupar medições por bateria e data
+  // Agrupar medições por bateria e data (usando data da atividade)
   const measurementMap: Record<string, Record<string, { voltage: number; resistance: number; count: number }>> = {};
   for (const m of measurements) {
     const serial = m.batterySerialNumber;
+    const actDate = m.activityId ? activityDateMap[m.activityId] : undefined;
+    if (!actDate) continue; // Ignorar medições sem atividade válida
     if (!measurementMap[serial]) measurementMap[serial] = {};
-    const dateKey = formatDateISO(m.date);
+    const dateKey = formatDateISO(actDate);
     if (!measurementMap[serial][dateKey]) {
       measurementMap[serial][dateKey] = { voltage: 0, resistance: 0, count: 0 };
     }
@@ -397,7 +530,6 @@ export function getBatteryEvolution(
   }
 
   const rows: BatteryEvolutionRow[] = batteries
-    .filter((b) => measurementMap[b.serialNumber])
     .sort((a, b) => a.bankNumber - b.bankNumber || a.sequenceNumber - b.sequenceNumber)
     .map((bat) => {
       const batData = measurementMap[bat.serialNumber] || {};
@@ -641,11 +773,11 @@ export function filterBatteries(
 export function filterMeasurements(
   measurements: Measurement[],
   filters: DashboardFilters,
-  filteredBatterySerials: Set<string>
+  batteryIds: Set<number | undefined>
 ): Measurement[] {
   return measurements.filter((m) => {
     // Filtro por baterias já filtradas
-    if (filteredBatterySerials.size > 0 && !filteredBatterySerials.has(m.batterySerialNumber)) {
+    if (batteryIds.size > 0 && !batteryIds.has(m.batteryId)) {
       return false;
     }
 
@@ -727,4 +859,64 @@ export function getUniqueManufacturers(batteries: Battery[]): string[] {
 /** Extrai modelos únicos */
 export function getUniqueModels(batteries: Battery[]): string[] {
   return Array.from(new Set(batteries.map((b) => b.model).filter(Boolean))).sort();
+}
+
+// ─── Bancos Desabilitados ────────────────────────────────────────────────────
+
+/**
+ * Detecta locais com bancos desabilitados (sem baterias ativas).
+ * Para locais com múltiplos bancos esperados (ex: TU = 2 bancos),
+ * verifica quais bancos realmente possuem baterias ativas.
+ * Bancos sem baterias ativas são considerados "desabilitados".
+ */
+export function getDisabledBanks(
+  batteries: Battery[],
+  locations: Location[]
+): DisabledBankInfo[] {
+  const result: DisabledBankInfo[] = [];
+
+  // Agrupar baterias ativas por locationId
+  const activeBatteriesByLocation: Record<number, Battery[]> = {};
+  for (const bat of batteries) {
+    if (bat.locationId && bat.status === 'Ativa') {
+      if (!activeBatteriesByLocation[bat.locationId]) {
+        activeBatteriesByLocation[bat.locationId] = [];
+      }
+      activeBatteriesByLocation[bat.locationId].push(bat);
+    }
+  }
+
+  for (const location of locations) {
+    const rule = LOCATION_RULES[location.locationType];
+    if (!rule || rule.banks <= 1) continue; // Só interessa locais com múltiplos bancos
+
+    const locationBatteries = activeBatteriesByLocation[location.id] || [];
+    if (locationBatteries.length === 0) continue; // Local sem nenhuma bateria ativa — outra situação
+
+    // Verificar quais bancos possuem baterias ativas
+    const activeBanksSet = new Set<number>();
+    for (const bat of locationBatteries) {
+      activeBanksSet.add(bat.bankNumber);
+    }
+    const activeBanks = Array.from(activeBanksSet).sort();
+
+    // Bancos esperados (1..N) que não possuem baterias ativas
+    const disabledBanks: number[] = [];
+    for (let bank = 1; bank <= rule.banks; bank++) {
+      if (!activeBanksSet.has(bank)) {
+        disabledBanks.push(bank);
+      }
+    }
+
+    if (disabledBanks.length > 0) {
+      result.push({
+        location,
+        expectedBanks: rule.banks,
+        activeBanks,
+        disabledBanks,
+      });
+    }
+  }
+
+  return result;
 }
