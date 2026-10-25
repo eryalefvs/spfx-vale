@@ -8,8 +8,8 @@
 import { SharePointService } from './SharePointService';
 import { ListNames } from '../constants/ListNames';
 import { CACHE_CONFIG, SP_FIELDS } from '../constants/DashboardConstants';
-import { Location, Battery, Measurement, Activity } from '../models/DashboardModels';
-import { mapSPToLocation, mapSPToBattery, mapSPToMeasurement, mapSPToActivity } from '../mappers/DashboardMappers';
+import { Location, Battery, Measurement, Activity, Sedes } from '../models/DashboardModels';
+import { mapSPToLocation, mapSPToBattery, mapSPToMeasurement, mapSPToActivity, mapToSede } from '../mappers/DashboardMappers';
 
 import '@pnp/sp/webs';
 import '@pnp/sp/lists';
@@ -177,6 +177,30 @@ export class DashboardService {
     return responsibles;
   }
 
+  // ── Sedes ───────────────────────────────────────────────────────────────
+
+  /** Carrega lista de Sedes com suas supervisões */
+  public static async loadSedes(forceRefresh: boolean = false): Promise<Sedes[]> {
+    const cacheKey = 'sedes';
+    if (!forceRefresh) {
+      const cached = this._cache.get<Sedes[]>(cacheKey);
+      if (cached) return cached;
+    }
+
+    const sp = SharePointService.sp;
+    const f = SP_FIELDS.Sedes;
+    const items = await sp.web.lists
+      .getByTitle(ListNames.Sedes)
+      .items
+      .select('Id', f.Title, f.Supervisao)
+      .top(500)();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sedes = (items as any[]).map(mapToSede);
+    this._cache.set(cacheKey, sedes);
+    return sedes;
+  }
+
   // ── Carregamento Orquestrado ────────────────────────────────────────────
 
   /** Carrega todos os dados do dashboard em paralelo e resolve lookups em memória */
@@ -185,13 +209,15 @@ export class DashboardService {
     batteries: Battery[];
     measurements: Measurement[];
     activities: Activity[];
+    sedes: Sedes[];
   }> {
-    const [locations, batteries, measurements, activities, responsibles] = await Promise.all([
+    const [locations, batteries, measurements, activities, responsibles, sedes] = await Promise.all([
       this.loadLocations(forceRefresh),
       this.loadBatteries(forceRefresh),
       this.loadMeasurements(forceRefresh),
       this.loadActivities(forceRefresh),
       this.loadResponsibles(forceRefresh),
+      this.loadSedes(forceRefresh),
     ]);
 
     // ── Resolução de lookups em memória ────────────────────────────────
@@ -239,7 +265,7 @@ export class DashboardService {
       }
     });
 
-    return { locations, batteries, measurements, activities };
+    return { locations, batteries, measurements, activities, sedes };
   }
 
   // ── Cache Control ───────────────────────────────────────────────────────

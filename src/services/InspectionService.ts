@@ -5,8 +5,9 @@
 // ============================================================================
 
 import { InspectionMapper } from '../mappers/InspectionMapper';
-import { IWizardFormData, IParsedBatteryData } from '../models/BatteryInspection';
+import { IWizardFormData, IParsedBatteryData, IQuickMeasurementData } from '../models/BatteryInspection';
 import { SharePointService } from './SharePointService';
+import { BatteryService } from './BatteryService';
 import { ListNames } from '../constants/ListNames';
 import { mapSPToLocation, mapToSede, mapToResponsibles } from '../mappers/DashboardMappers';
 import { Location, Sedes, Responsibles } from '../models/DashboardModels';
@@ -73,32 +74,54 @@ export class InspectionService {
     data: ArrayBuffer,
     fileName: string
   ): IParsedBatteryData[] {
-    const workbook = XLSX.read(data, { type: 'array' });
+    const isCsv = fileName.toLowerCase().endsWith('.csv');
+
+    let workbook;
+    if (isCsv) {
+      // CSV do analisador pode ser UTF-16LE (BOM) ou UTF-8
+      const bytes = new Uint8Array(data);
+      const isUtf16 = bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE;
+      const csvText = isUtf16
+        ? new TextDecoder('utf-16le').decode(data)
+        : new TextDecoder('utf-8').decode(data);
+      workbook = XLSX.read(csvText, { type: 'string', FS: '\t' });
+    } else {
+      workbook = XLSX.read(data, { type: 'array' });
+    }
+
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
     // ─── Extrair número do banco do campo "Location:" ──────────────────
-    const locationStr = String(rows[0]?.[1] || '');
+    // No Excel: row 0, col 1.  No CSV: pode estar em row 1 ou outra.
+    // Busca genérica pela primeira row que contenha "Location" na col 0.
     let bankNumber = 1;
-    const bankMatch = locationStr.match(/B(\d+)/i);
-    if (bankMatch) {
-      bankNumber = parseInt(bankMatch[1], 10);
+    for (const row of rows) {
+      if (row && typeof row[0] === 'string' && row[0].toLowerCase().includes('location')) {
+        const locationStr = String(row[1] || '');
+        const bankMatch = locationStr.match(/B(\d+)/i);
+        if (bankMatch) {
+          bankNumber = parseInt(bankMatch[1], 10);
+        }
+        break;
+      }
     }
     const bankLabel = `B${bankNumber}`;
 
-    // ─── Encontrar header "NO", "mΩ", "VDC" ───────────────────────────
+    // ─── Encontrar header "NO", "mΩ"/"mO", "VDC" ──────────────────────
+    // Excel usa "mΩ" (com símbolo Omega), CSV pode usar "mO" (letra O).
     const headerIdx = rows.findIndex(
       (row) =>
         row &&
-        row[0] === 'NO' &&
+        String(row[0]).trim() === 'NO' &&
         typeof row[1] === 'string' &&
-        row[1].includes('Ω')
+        (row[1].includes('Ω') || row[1].toLowerCase().includes('mo'))
     );
 
     if (headerIdx === -1) {
       console.warn(
-        `[parseExcelFile] Header "NO, mΩ, VDC" não encontrado em "${fileName}".`
+        `[parseExcelFile] Header "NO, mΩ/mO, VDC" não encontrado em "${fileName}".`
       );
       return [];
     }
@@ -108,9 +131,13 @@ export class InspectionService {
 
     for (let i = headerIdx + 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row || typeof row[0] !== 'number') break;
+      if (!row) break;
 
-      const no = row[0] as number;
+      // NO pode ser number (Excel) ou string "01" (CSV)
+      const rawNo = row[0];
+      const no = typeof rawNo === 'number' ? rawNo : parseInt(String(rawNo), 10);
+      if (isNaN(no)) break;
+
       const resistance = parseFloat(String(row[1]));
       const voltage = parseFloat(String(row[2]));
 
@@ -180,6 +207,7 @@ export class InspectionService {
   public async saveActivity(data: IWizardFormData): Promise<number> {
     const item = InspectionMapper.activityToSharePoint(data);
 
+
     // console.log(
     //   '[InspectionService] Dados enviados para Activity:',
     //   JSON.stringify(item, null, 2)
@@ -194,23 +222,59 @@ export class InspectionService {
     return result.Id;
   }
 
+  /** Salva uma atividade avulsa (tipo "Outros") e retorna o ID criado */
+  public async saveQuickActivity(data: IQuickMeasurementData): Promise<number> {
+    const item = InspectionMapper.quickActivityToSharePoint(data);
+
+    const result = await SharePointService.sp.web.lists
+      .getByTitle(ListNames.Activities)
+      .items.add(item);
+
+    return result.Id;
+  }
+
   /** Salva todas as medições em batch, vinculadas à atividade */
   public async saveMeasurements(
     activityId: number,
     batteries: IParsedBatteryData[],
-    date: string
+    date: string,
+    locationId: number
   ): Promise<void> {
-    // const [batchWeb, execute] = SharePointService.sp.web.batched();
 
-    console.log(
-      '[saveMeasurements] Activity ID:',
-      activityId
-    );
+    // console.log(
+    //   '[saveMeasurements] Activity ID:',
+    //   activityId,
+    //   '| Location ID:',
+    //   locationId
+    // );
+
+    // Carregar baterias ativas do local para fazer match por (banco, NO)
+    const activeBatteries = await BatteryService.loadActiveBatteriesByLocation(locationId);
+    // console.log(
+    //   '[saveMeasurements] Baterias ativas no local:',
+    //   activeBatteries.length
+    // );
 
     const list = SharePointService.sp.web.lists
       .getByTitle(ListNames.Measurements);
 
     for (const battery of batteries) {
+
+      // Match: encontrar bateria pelo banco + número sequencial (NO)
+      const matched = activeBatteries.find(
+        (b) => b.bankNumber === battery.bankNumber && b.sequenceNumber === battery.no
+      );
+
+      if (matched) {
+        battery.matchedBatteryId = matched.id;
+        // console.log(
+        //   `[saveMeasurements] Match: B${battery.bankNumber}-Bat${battery.no} → ID ${matched.id} (${matched.serialNumber})`
+        // );
+      } else {
+        console.warn(
+          `[saveMeasurements] Sem match para B${battery.bankNumber}-Bat${battery.no} no local ${locationId}`
+        );
+      }
 
       const item = InspectionMapper.measurementToSharePoint(
         activityId,
@@ -218,21 +282,21 @@ export class InspectionService {
         date
       );
 
-      console.log(
-        '[saveMeasurements] Item:',
-        JSON.stringify(item, null, 2)
-      );
+      // console.log(
+      //   '[saveMeasurements] Item:',
+      //   JSON.stringify(item, null, 2)
+      // );
 
       const result = await list.items.add(item);
 
-      console.log(
-        '[saveMeasurements] Medição salva:',
-        result.Id
-      );
+      // console.log(
+      //   '[saveMeasurements] Medição salva:',
+      //   result.Id
+      // );
     }
 
-    console.log(
-      '[saveMeasurements] Todas as medições foram salvas.'
-    );
+    // console.log(
+    //   '[saveMeasurements] Todas as medições foram salvas.'
+    // );
   }
 }

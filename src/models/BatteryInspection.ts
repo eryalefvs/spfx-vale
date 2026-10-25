@@ -59,6 +59,25 @@ export interface IParsedBatteryData {
   voltageStatus: BatteryStatus;
   resistanceStatus: BatteryStatus;
   overallStatus: BatteryStatus;
+  matchedBatteryId?: number;       // ID da bateria no SharePoint (resolvido no salvamento)
+}
+
+// ─── Dados da Medição Avulsa ─────────────────────────────────────────────────
+
+/** Dados do formulário simplificado de medição avulsa */
+export interface IQuickMeasurementData {
+  supervision: string;
+  locationType: string;
+  sede: string;
+  sedeId: number;
+  km: string;
+  kmId: number;
+  locationId: number;
+  measurementDate: string;
+  ambientTemperature: string;
+  totalFloatVoltage: string;
+  parsedBatteries: IParsedBatteryData[];
+  uploadedFileNames: string[];
 }
 
 // ─── Wizard Steps ────────────────────────────────────────────────────────────
@@ -86,6 +105,7 @@ export const ACTIVITY_TYPES: string[] = [
   'Inspeção Detalhada',
   'Manutenção Preventiva',
   'Substituição',
+  'Outros'
 ];
 
 export const LOCATION_TYPES: string[] = [

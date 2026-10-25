@@ -4,7 +4,7 @@
 // Usa SP_FIELDS para garantir que os nomes internos das colunas estão corretos.
 // ============================================================================
 
-import { IWizardFormData, IParsedBatteryData } from '../models/BatteryInspection';
+import { IWizardFormData, IParsedBatteryData, IQuickMeasurementData } from '../models/BatteryInspection';
 import { SP_FIELDS } from '../constants/DashboardConstants';
 
 export class InspectionMapper {
@@ -57,7 +57,7 @@ export class InspectionMapper {
   ): Record<string, unknown> {
     const f = SP_FIELDS.Measurements;
 
-    return {
+    const item: Record<string, unknown> = {
       [f.Title]: `${battery.bankLabel}-Bat${String(battery.no).length === 1
         ? `0${String(battery.no)}`
         : String(battery.no)}`,
@@ -69,6 +69,43 @@ export class InspectionMapper {
       [f.Status_tensao]: battery.voltageStatus,
       [f.Status_resistencia]: battery.resistanceStatus,
       [f.Data]: date,
+    };
+
+    // Lookup da bateria pelo ID (coluna "Bateria" na lista de medições)
+    if (battery.matchedBatteryId) {
+      item[f.BateriaId] = battery.matchedBatteryId;
+    }
+
+    return item;
+  }
+
+  /**
+   * Converte dados da medição avulsa → item da lista de Atividades.
+   * Tipo de atividade fixo como "Outros", OM fixo como "AVULSA".
+   */
+  public static quickActivityToSharePoint(data: IQuickMeasurementData): Record<string, unknown> {
+    const f = SP_FIELDS.Activities;
+
+    return {
+      'Title': `AVULSA-${data.locationType}-KM${data.km}-${data.measurementDate}`,
+      [f.OM]: 'AVULSA',
+      [f.Data_da_Atividade]: data.measurementDate,
+      [f.Tipo_de_Atividade]: 'Outros',
+      [f.Supervisao]: data.supervision,
+      [f.Tipo_de_Local]: data.locationType,
+      [f.SedeId]: data.sedeId,
+      [f.KMId]: data.kmId,
+      [f.Temperatura_da_Sala]: data.ambientTemperature
+        ? parseFloat(data.ambientTemperature)
+        : null,
+      [f.Tensao_Total]: data.totalFloatVoltage
+        ? parseFloat(data.totalFloatVoltage)
+        : null,
+      [f.Observacoes_Gerais]: 'Medição avulsa',
+      [f.Integridade_Anomalias]: '',
+      [f.Integridade_Solucoes]: '',
+      [f.Justificativa_Falta_Info]: '',
+      [f.Justificativa_Sem_Contato]: '',
     };
   }
 }

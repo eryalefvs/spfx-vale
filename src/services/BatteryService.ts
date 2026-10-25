@@ -27,6 +27,15 @@ export interface NewBatteryData {
   km: string;
   locationId: number;     // IDLocalId (lookup)
   status: string;         // 'Ativa' | 'Inativa'
+  supervisao?: string;    // Supervisão do local
+}
+
+/** Dados para atualização de uma bateria existente */
+export interface UpdateBatteryData {
+  serialNumber: string;
+  model: string;
+  manufacturer: string;
+  manufactureDate?: string;
 }
 
 export class BatteryService {
@@ -103,6 +112,10 @@ export class BatteryService {
       itemData[f.DataDeFabricacao] = bat.manufactureDate;
     }
 
+    if (bat.supervisao) {
+      itemData[f.Supervisao] = bat.supervisao;
+    }
+
     await sp.web.lists.getByTitle(ListNames.Batteries).items.add(itemData);
   }
 
@@ -112,6 +125,35 @@ export class BatteryService {
   public static async addBatteries(batteries: NewBatteryData[]): Promise<void> {
     for (const bat of batteries) {
       await this.addBatterySingle(bat);
+    }
+  }
+
+  // ── Atualização (edição in-place) ────────────────────────────────────
+
+  /** Atualiza os campos editáveis de uma bateria existente */
+  public static async updateBattery(batteryId: number, data: UpdateBatteryData): Promise<void> {
+    const sp = SharePointService.sp;
+    const f = SP_FIELDS.Batteries;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const itemData: Record<string, any> = {
+      [f.Title]: data.serialNumber,
+      [f.Modelo]: data.model,
+      [f.Fabricante]: data.manufacturer,
+    };
+
+    if (data.manufactureDate) {
+      itemData[f.DataDeFabricacao] = data.manufactureDate;
+    }
+
+    await sp.web.lists.getByTitle(ListNames.Batteries)
+      .items.getById(batteryId).update(itemData);
+  }
+
+  /** Atualiza várias baterias sequencialmente */
+  public static async updateBatteries(updates: Array<{ id: number; data: UpdateBatteryData }>): Promise<void> {
+    for (const { id, data } of updates) {
+      await this.updateBattery(id, data);
     }
   }
 
