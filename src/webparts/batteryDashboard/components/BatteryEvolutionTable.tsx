@@ -5,10 +5,12 @@ import { Battery, Measurement } from '../../../models/DashboardModels';
 import { getBatteryEvolution, BatteryEvolutionRow, getUniqueBankNumbers } from '../../../utils/dashboardUtils';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { RESISTANCE_THRESHOLDS, VOLTAGE_THRESHOLDS } from '../../../constants/DashboardConstants';
+import { Activity } from '../../../models/DashboardModels';
 
 export interface IBatteryEvolutionTableProps {
   batteries: Battery[];
   measurements: Measurement[];
+  activities: Activity[];
   onSelectBattery: (serialNumber: string) => void;
 }
 
@@ -77,7 +79,7 @@ function getTrendBadge(trend: BatteryEvolutionRow['trend'], delta: number, metri
 }
 
 export const BatteryEvolutionTable: React.FC<IBatteryEvolutionTableProps> = ({
-  batteries, measurements, onSelectBattery,
+  batteries, measurements, activities, onSelectBattery,
 }) => {
   const [metric, setMetric] = React.useState<MetricType>('resistance');
   const [selectedBank, setSelectedBank] = React.useState<number | undefined>();
@@ -92,8 +94,8 @@ export const BatteryEvolutionTable: React.FC<IBatteryEvolutionTableProps> = ({
 
   // Dados de evolução
   const evolution = React.useMemo(
-    () => getBatteryEvolution(filteredBatteries, measurements),
-    [filteredBatteries, measurements]
+    () => getBatteryEvolution(filteredBatteries, measurements, activities),
+    [filteredBatteries, measurements, activities]
   );
 
   if (evolution.rows.length === 0) return null;

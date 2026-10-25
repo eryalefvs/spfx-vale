@@ -9,7 +9,7 @@ import {
 export interface IBarChartCardProps {
   title: string;
   subtitle?: string;
-  data: Array<{ label: string;[key: string]: string | number }>;
+  data: Array<{ label: number;[key: string]: string | number }>;
   dataKey: string;
   nameKey: string;
   unit?: string;
