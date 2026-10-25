@@ -1,0 +1,792 @@
+// Módulo SCSS para o Dashboard de Baterias
+// Herda variáveis de tema do App.module.scss (platformRoot / platformRootDark)
+
+// ─── Dashboard Root ──────────────────────────────────────────────────────────
+// Não define CSS custom properties — herda do .platformRoot global
+
+.dashboardRoot {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-header);
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerTitle {
+  h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.72rem;
+    color: var(--text-subtle);
+    margin: 0;
+  }
+}
+
+.logoImage {
+  height: 28px;
+  width: auto;
+}
+
+.syncInfo {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+}
+
+// ─── Theme Toggle ────────────────────────────────────────────────────────────
+
+.themeToggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-user);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.2s;
+
+  &:hover {
+    transform: scale(1.08);
+  }
+}
+
+// ─── Body layout ─────────────────────────────────────────────────────────────
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.contentArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+// ─── Filter sidebar ──────────────────────────────────────────────────────────
+
+.filterSidebar {
+  overflow: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  flex-shrink: 0;
+}
+
+.filterSidebarOpen {
+  width: 240px;
+  min-width: 240px;
+}
+
+.filterSidebarClosed {
+  width: 0;
+  min-width: 0;
+}
+
+.filterSidebarInner {
+  width: 180px;
+  height: 100%;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-primary);
+  overflow-y: auto;
+  padding: 20px 16px;
+  transition: opacity 0.2s, background-color 0.3s ease;
+}
+
+.filterSidebarHidden {
+  opacity: 0;
+  padding: 0;
+}
+
+.filterHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 20px;
+  flex-wrap: wrap;
+}
+
+.filterItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filterLabel {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.filterClearBtn {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0 8px;
+
+  &:hover {
+    background-color: #FEF2F2;
+    border-color: #DC2626;
+    color: #DC2626;
+  }
+}
+
+// ─── Cards ───────────────────────────────────────────────────────────────────
+
+.card {
+  background-color: var(--bg-surface);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.cardHeader {
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--border-light);
+
+  .cardTitle {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .cardSubtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+}
+
+.cardBody {
+  padding: 16px 20px;
+}
+
+// ─── KPI Cards ───────────────────────────────────────────────────────────────
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.kpiCard {
+  composes: card;
+  padding: 20px;
+}
+
+.kpiIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.kpiValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin: 0;
+}
+
+.kpiLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.kpiSubtitle {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+// ─── Chart Grids ─────────────────────────────────────────────────────────────
+
+.chartRow2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartRow2x1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ─── Status Badge ────────────────────────────────────────────────────────────
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ─── Table ───────────────────────────────────────────────────────────────────
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-primary);
+    background-color: var(--bg-table-header);
+  }
+
+  td {
+    padding: 11px 14px;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  tbody tr {
+    transition: background 0.1s;
+
+    &:hover {
+      background-color: var(--bg-surface-hover);
+    }
+  }
+}
+
+// ─── Pagination ──────────────────────────────────────────────────────────────
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.paginationInfo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.paginationButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// ─── Loading / Empty / Error ─────────────────────────────────────────────────
+
+.loadingOverlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.loadingText {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.emptySubtitle {
+  font-size: 0.875rem;
+  color: var(--text-subtle);
+}
+
+.errorState {
+  composes: emptyState;
+
+  .errorTitle {
+    color: #DC2626;
+  }
+}
+
+// ─── Heatmap ─────────────────────────────────────────────────────────────────
+
+.heatmapGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heatmapCell {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, transform 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+}
+
+.heatmapCellLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.heatmapLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.heatmapLegendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+// ─── Search Input ────────────────────────────────────────────────────────────
+
+.searchWrapper {
+  position: relative;
+  max-width: 280px;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  outline: none;
+
+  &:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-subtle);
+  }
+}
+
+// ─── User avatar ─────────────────────────────────────────────────────────────
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background-color: var(--bg-user);
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #2563EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+}
+
+.userName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.userPhoto {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+// ─── Activity History Table ────────────────────────────────────────────────
+
+.activityRow {
+  transition: background-color 0.12s;
+
+  &:hover {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+.expandedRow {
+  background-color: var(--bg-surface-hover);
+}
+
+.expandedContent {
+  padding: 8px 16px 16px 36px;
+  animation: fadeSlideDown 0.2s ease-out;
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.innerTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+
+  th {
+    background-color: var(--bg-surface);
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background-color: var(--bg-surface-hover);
+  }
+}
+
+.measurementBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background-color: var(--accent-light);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+// ─── Toggle Buttons ────────────────────────────────────────────────────────
+
+.toggleBtn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-primary);
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+// ─── Chart Card ────────────────────────────────────────────────────────────
+
+.chartCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chartCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chartCardTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.chartCardSubtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.locationHealthMap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  padding: 8px 0 12px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.locationHealthCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  max-width: 80px;
+  flex: 1 1 56px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+  }
+}
+
+.locationHealthCardSelected {
+  outline: 3px solid #2563EB;
+  outline-offset: 2px;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+  z-index: 3;
+
+  &:hover {
+    transform: translateY(-3px) scale(1.05);
+  }
+}
+
+.locationHealthConnector {
+  width: 12px;
+  height: 2px;
+  background-color: var(--border-primary);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.locationHealthKm {
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.locationHealthType {
+  font-size: 0.5625rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.locationHealthBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.locationHealthLegend {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.locationHealthGradientBar {
+  width: 220px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #22C55E, #F59E0B, #DC2626);
+}
+
+.locationHealthLegendLabels {
+  width: 220px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}

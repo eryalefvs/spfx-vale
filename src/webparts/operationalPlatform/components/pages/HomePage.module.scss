@@ -1,0 +1,307 @@
+// ============================================================================
+// HomePage.module.scss
+// Estilos da página inicial — saudação, KPIs e cards de áreas.
+// Usa CSS custom properties herdadas do tema global.
+// ============================================================================
+
+$vale-green: #007E7A;
+$vale-green-dark: #006560;
+$vale-green-light: #0ABB98;
+$vale-yellow: #ECB11F;
+$vale-yellow-dark: #D4A017;
+
+$radius-md: 10px;
+$radius-lg: 16px;
+$transition: all 0.2s ease;
+
+// ─── Hero Section ────────────────────────────────────────────────────────────
+
+.heroSection {
+  padding: 40px 40px 32px;
+  background: linear-gradient(135deg, #0A3A2A 0%, #007E7A 60%, #0ABB98 100%);
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 50%;
+  }
+}
+
+.heroLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: $vale-yellow;
+  margin-bottom: 8px;
+}
+
+.heroTitle {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.heroHighlight {
+  color: $vale-yellow;
+}
+
+.heroSubtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+// ─── Content Area ────────────────────────────────────────────────────────────
+
+.contentSection {
+  padding: 32px 40px 48px;
+}
+
+// ─── KPI Cards ───────────────────────────────────────────────────────────────
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.kpiCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  box-shadow: var(--shadow-card);
+  transition: $transition;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+}
+
+.kpiIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.kpiIconBlue {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.kpiIconYellow {
+  background: #FFF7ED;
+  color: #F97316;
+}
+
+.kpiIconGreen {
+  background: #F0FDF4;
+  color: #22C55E;
+}
+
+.kpiInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.kpiValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+// ─── Section Header ──────────────────────────────────────────────────────────
+
+.sectionHeader {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+
+// ─── Area Cards ──────────────────────────────────────────────────────────────
+
+.areasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.areaCard {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: $transition;
+  text-align: left;
+  border-top: none;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: $vale-green;
+  }
+}
+
+.areaCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.areaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-md;
+  background: rgba($vale-green, 0.08);
+  color: $vale-green;
+  font-size: 22px;
+}
+
+.areaProCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: $vale-green;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.areaName {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.areaDescription {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+// ─── PRO Tags ────────────────────────────────────────────────────────────────
+
+.proTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.proTag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: $vale-green;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+// ─── Area Stats ──────────────────────────────────────────────────────────────
+
+.areaStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.statValueTotal {
+  color: var(--text-primary);
+}
+
+.statValuePending {
+  color: $vale-yellow-dark;
+}
+
+.statValueDone {
+  color: $vale-green;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .heroSection {
+    padding: 24px 20px;
+  }
+
+  .contentSection {
+    padding: 20px;
+  }
+
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+
+  .areasGrid {
+    grid-template-columns: 1fr;
+  }
+}

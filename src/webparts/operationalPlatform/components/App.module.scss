@@ -1,0 +1,118 @@
+// ============================================================================
+// App.module.scss
+// Design tokens globais e reset da Plataforma Operacional Vale.
+// Sistema de temas via CSS Custom Properties (Light / Dark).
+// Cores: Verde Vale #007E7A, Amarelo #ECB11F
+// ============================================================================
+
+// ─── Layout Constants ────────────────────────────────────────────────────────
+
+$sidebar-width: 240px;
+$sidebar-collapsed: 64px;
+$topbar-height: 56px;
+
+// ─── Root Container ──────────────────────────────────────────────────────────
+
+.platformRoot {
+  // ── Light Theme (default) ──
+  --bg-primary: #F5F7FA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-hover: #F0F4F8;
+  --bg-input: #F8FAFC;
+  --bg-stripe: #FAFBFC;
+  --bg-table-header: #F8FAFC;
+  --bg-user: #F1F5F9;
+  --bg-sidebar: #0A3A2A;
+  --bg-sidebar-hover: #0E4D38;
+  --bg-sidebar-active: #12614A;
+
+  --border-primary: #E2E8F0;
+  --border-light: #F1F5F9;
+
+  --text-primary: #1E293B;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-subtle: #94A3B8;
+  --text-on-dark: #FFFFFF;
+  --text-on-dark-muted: rgba(255, 255, 255, 0.55);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 1px 4px rgba(15, 23, 42, 0.06);
+  --shadow-header: none;
+
+  --vale-green: #007E7A;
+  --vale-green-dark: #006560;
+  --vale-green-light: #0ABB98;
+  --vale-yellow: #ECB11F;
+
+  --accent: #2563EB;
+  --accent-light: #EFF6FF;
+  --danger: #DC2626;
+  --danger-light: #FEF2F2;
+  --warning: #F97316;
+  --warning-light: #FFF7ED;
+  --success: #22C55E;
+  --success-light: #F0FDF4;
+
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
+  display: flex;
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// ── Dark Theme ──
+.platformRootDark {
+  --bg-primary: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-surface-hover: #334155;
+  --bg-input: #1E293B;
+  --bg-stripe: #253347;
+  --bg-table-header: #1E293B;
+  --bg-user: #334155;
+
+  --border-primary: #334155;
+  --border-light: #1E293B;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-subtle: #64748B;
+
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-header: 0 1px 8px rgba(0, 0, 0, 0.4);
+
+  --accent: #3B82F6;
+  --accent-light: #1E3A5F;
+  --danger-light: #3B1C1C;
+  --warning-light: #3B2A10;
+  --success-light: #1A3B1A;
+}
+
+// ─── Layout Grid ─────────────────────────────────────────────────────────────
+
+.shellLayout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.contentArea {
+  flex: 1;
+  padding: 0;
+  overflow-y: auto;
+}

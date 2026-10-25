@@ -1,0 +1,246 @@
+// ============================================================================
+// AreaPage.module.scss
+// Estilos da página de área — lista de procedimentos operacionais.
+// ============================================================================
+
+$vale-green: #007E7A;
+$vale-green-light: #0ABB98;
+$vale-yellow: #ECB11F;
+
+$bg-page: #F5F7FA;
+$bg-card: #FFFFFF;
+$border-color: #E2E8F0;
+
+$text-primary: #1E293B;
+$text-secondary: #475569;
+$text-muted: #94A3B8;
+
+$radius-md: 10px;
+$radius-lg: 16px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$transition: all 0.2s ease;
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+.page {
+  padding: 32px 40px 48px;
+}
+
+// ─── Area Header ─────────────────────────────────────────────────────────────
+
+.areaHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  background: var(--bg-surface);
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  margin-bottom: 32px;
+}
+
+.areaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba($vale-green, 0.08);
+  color: $vale-green;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.areaInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.areaLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.areaName {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+// ─── Procedure List ──────────────────────────────────────────────────────────
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.procedureList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.procedureCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--bg-surface);
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  cursor: pointer;
+  transition: $transition;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: $vale-green;
+    transform: translateX(4px);
+  }
+}
+
+.procedureNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: $vale-green;
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.procedureInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.procedureCode {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: $vale-green;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-bottom: 4px;
+}
+
+.procedureName {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+// ─── Procedure Stats ─────────────────────────────────────────────────────────
+
+.procedureStats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.statGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.statIcon {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.statIconTotal {
+  color: var(--text-muted);
+}
+
+.statIconPending {
+  color: $vale-yellow;
+}
+
+.statIconDone {
+  color: $vale-green;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.statValueTotal {
+  color: var(--text-primary);
+}
+
+.statValuePending {
+  color: $vale-yellow;
+}
+
+.statValueDone {
+  color: $vale-green;
+}
+
+.procedureChevron {
+  font-size: 16px;
+  color: $text-muted;
+  flex-shrink: 0;
+}
+
+// ─── Empty State ─────────────────────────────────────────────────────────────
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: $text-muted;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.emptySubtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+}

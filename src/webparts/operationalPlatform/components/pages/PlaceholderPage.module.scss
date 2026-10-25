@@ -1,0 +1,61 @@
+// ============================================================================
+// PlaceholderPage.module.scss
+// Estilos da página placeholder "Em breve".
+// ============================================================================
+
+$vale-green: #007E7A;
+$text-primary: #1E293B;
+$text-secondary: #475569;
+$text-muted: #94A3B8;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.icon {
+  font-size: 56px;
+  color: $text-muted;
+  margin-bottom: 24px;
+  opacity: 0.4;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.subtitle {
+  margin: 0 0 32px;
+  font-size: 15px;
+  color: $text-secondary;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: 1px solid $vale-green;
+  border-radius: 6px;
+  background: transparent;
+  color: $vale-green;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($vale-green, 0.06);
+  }
+}
