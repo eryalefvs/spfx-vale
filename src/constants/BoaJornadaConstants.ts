@@ -11,16 +11,16 @@ export const SP_FIELDS_BOAJORNADA = {
         Area: "Area",
         Coordenacao: "Coordenacao",
         Gerencia: "Gerencia",
-        RiscosMaiorIndice: "RiscosMaiorIndice",
-        Detalhamento: "Detalhamento"
+        Detalhamento: "Detalhamento",
+        RiscosMaiorIndice: "RiscosMaiorIndice"
     },
     BoaJornadaAtividade: {
         Title: "Title",
-        JornadaId: "JornadaId",
+        JornadaId: "JornadaID",
         Atividade: "Atividade",
         Executantes: "Executantes",
         OQuePodeMatar: "OQuePodeMatar",
-        RiscosCriticos: "RiscosCriticos"
+        RiscosCriticos: "RiscosCriticos",
     },
     IconeRiscosCriticos: {
         Title: "Title",

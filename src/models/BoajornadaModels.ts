@@ -8,12 +8,12 @@ export interface BoaJornadaInfoGerais {
     id: number;
     title: string;
     data: string;
-    supervisao: string;
-    area: string;
+    //supervisao: string;
+    //area: string;
     coordenacao: string;
     gerencia: string;
-    riscosMaiorIndice: string;
     detalhamento: string;
+    riscosMaiorIndice: string
 }
 
 /** Atividade vinculada a uma Boa Jornada via jornadaId */
@@ -49,8 +49,8 @@ export interface AtividadeFormRow {
 
 /** Estado completo do formulário de Boa Jornada */
 export interface BoaJornadaFormData {
-    supervisao: string;
-    area: string;
+    //supervisao: string;
+    //area: string;
     data: string;
     coordenacao: string;
     gerencia: string;
@@ -70,8 +70,8 @@ export const createEmptyAtividade = (): AtividadeFormRow => ({
 
 /** Valores padrão para o formulário */
 export const DEFAULT_BOA_JORNADA_FORM: BoaJornadaFormData = {
-    supervisao: '',
-    area: '',
+    //supervisao: '',
+    //area: '',
     data: new Date().toISOString().split('T')[0],
     coordenacao: '',
     gerencia: '',

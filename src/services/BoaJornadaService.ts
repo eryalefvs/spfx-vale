@@ -20,6 +20,7 @@ import {
     mapAtividadeToSP,
     mapSPToRiscoCritico
 } from '../mappers/BoaJornadaMapper';
+import '@pnp/sp/attachments';
 
 const fInfo = SP_FIELDS_BOAJORNADA.BoaJornadaInfoGerais;
 const fAtiv = SP_FIELDS_BOAJORNADA.BoaJornadaAtividade;
@@ -30,28 +31,79 @@ export class BoaJornadaService {
     // ── Ícones de Riscos Críticos ───────────────────────────────────────
 
     /** Carrega todos os ícones de riscos críticos da lista do SP */
+    // public async loadRiscosCriticos(): Promise<RiscoCriticoIcone[]> {
+    //     const sp = SharePointService.sp;
+
+    //     const items = await sp.web.lists
+    //          .getByTitle(ListNames.IconeRiscosCriticos)
+    //          .items
+    //          .top(1)();
+
+    //     console.log("ITEM DA LISTA:", items[0]);
+    //     console.log("CHAVES:", Object.keys(items[0]));
+
+    //     return items;
+
+    //     const items = await sp.web.lists
+    //         .getByTitle(ListNames.IconeRiscosCriticos)
+    //         .items.select(
+    //             'Id', fRisco.Title, fRisco.Descricao,
+    //             fRisco.RACAssociado, fRisco.Icone
+    //         )
+    //         .top(100)();
+
+    //     const attachments = await sp.web.lists
+    //         .getByTitle(ListNames.IconeRiscosCriticos)
+    //         .items
+    //         .getById(1)
+    //         .attachmentFiles();
+
+    //     console.log('ANEXOS DO ITEM:', attachments);
+    //     console.log('URL DA IMAGEM:', attachments[0]?.ServerRelativeUrl);
+    //     console.log('NOME:', attachments[0]?.FileName);
+
+    //     return items.map(mapSPToRiscoCritico);
+    // }
+
     public async loadRiscosCriticos(): Promise<RiscoCriticoIcone[]> {
         const sp = SharePointService.sp;
 
         const items = await sp.web.lists
             .getByTitle(ListNames.IconeRiscosCriticos)
             .items
-            .top(1)();
+            .select(
+                'Id',
+                fRisco.Title,
+                fRisco.Descricao,
+                fRisco.RACAssociado
+            )
+            .top(100)();
 
-        console.log("ITEM DA LISTA:", items[0]);
-        console.log("CHAVES:", Object.keys(items[0]));
+        const riscos = await Promise.all(
+            items.map(async (item) => {
+                const attachments = await sp.web.lists
+                    .getByTitle(ListNames.IconeRiscosCriticos)
+                    .items
+                    .getById(item.Id)
+                    .attachmentFiles();
 
-        return items;
+                const serverRelativeUrl = attachments[0]?.ServerRelativeUrl || '';
 
-        // const items = await sp.web.lists
-        //     .getByTitle(ListNames.IconeRiscosCriticos)
-        //     .items.select(
-        //         'Id', fRisco.Title, fRisco.Descricao,
-        //         fRisco.RACAssociado, fRisco.Icone
-        //     )
-        //     .top(100)();
+                const iconeUrl = serverRelativeUrl
+                    ? new URL(serverRelativeUrl, window.location.origin).href
+                    : '';
 
-        // return items.map(mapSPToRiscoCritico);
+                return {
+                    id: item.Id,
+                    title: item[fRisco.Title] || '',
+                    descricao: item[fRisco.Descricao] || '',
+                    racAssociado: item[fRisco.RACAssociado] || '',
+                    iconeUrl
+                };
+            })
+        );
+
+        return riscos;
     }
 
     // ── Informações Gerais ──────────────────────────────────────────────
@@ -63,9 +115,8 @@ export class BoaJornadaService {
         const items = await sp.web.lists
             .getByTitle(ListNames.BoaJornadaInfoGerais)
             .items.select(
-                'Id', fInfo.Title, fInfo.Data, fInfo.Supervisao,
-                fInfo.Area, fInfo.Coordenacao, fInfo.Gerencia,
-                fInfo.RiscosMaiorIndice, fInfo.Detalhamento
+                'Id', fInfo.Title, fInfo.Data,
+                fInfo.Coordenacao, fInfo.Gerencia, fInfo.Detalhamento
             )
             .orderBy(fInfo.Data, false)
             .top(500)();
@@ -81,9 +132,7 @@ export class BoaJornadaService {
             .getByTitle(ListNames.BoaJornadaInfoGerais)
             .items.getById(id)
             .select(
-                'Id', fInfo.Title, fInfo.Data, fInfo.Supervisao,
-                fInfo.Area, fInfo.Coordenacao, fInfo.Gerencia,
-                fInfo.RiscosMaiorIndice, fInfo.Detalhamento
+                'Id', fInfo.Title, fInfo.Data, fInfo.Coordenacao, fInfo.Gerencia, fInfo.Detalhamento
             )();
 
         return mapSPToBoaJornada(item);
@@ -110,10 +159,11 @@ export class BoaJornadaService {
         const items = await sp.web.lists
             .getByTitle(ListNames.BoaJornadaAtividade)
             .items.select(
-                'Id', fAtiv.Title, fAtiv.JornadaId, fAtiv.Atividade,
-                fAtiv.Executantes, fAtiv.OQuePodeMatar, fAtiv.RiscosCriticos
+                'Id', fAtiv.Title, 'JornadaID/Id', fAtiv.Atividade,
+                fAtiv.Executantes, fAtiv.OQuePodeMatar, 'RiscosCriticos/Id',
             )
-            .filter(`${fAtiv.JornadaId} eq ${jornadaId}`)
+            .expand('JornadaID', 'RiscosCriticos')
+            .filter(`JornadaID/Id eq ${jornadaId}`)
             .top(100)();
 
         return items.map(mapSPToAtividade);
@@ -126,6 +176,8 @@ export class BoaJornadaService {
     ): Promise<void> {
         const sp = SharePointService.sp;
         const list = sp.web.lists.getByTitle(ListNames.BoaJornadaAtividade);
+
+        // console.log("JORNADA ID:", jornadaId, "Atividades:", atividades);
 
         for (const atividade of atividades) {
             if (!atividade.atividade.trim()) continue; // Pula linhas vazias

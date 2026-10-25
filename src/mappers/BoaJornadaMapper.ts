@@ -21,8 +21,8 @@ export function mapSPToBoaJornada(item: any): BoaJornadaInfoGerais {
         id: item.Id,
         title: item[f.BoaJornadaInfoGerais.Title] || '',
         data: item[f.BoaJornadaInfoGerais.Data] || '',
-        supervisao: item[f.BoaJornadaInfoGerais.Supervisao] || '',
-        area: item[f.BoaJornadaInfoGerais.Area] || '',
+        //supervisao: item[f.BoaJornadaInfoGerais.Supervisao] || '',
+        // area: item[f.BoaJornadaInfoGerais.Area] || '',
         coordenacao: item[f.BoaJornadaInfoGerais.Coordenacao] || '',
         gerencia: item[f.BoaJornadaInfoGerais.Gerencia] || '',
         riscosMaiorIndice: item[f.BoaJornadaInfoGerais.RiscosMaiorIndice] || '',
@@ -31,23 +31,23 @@ export function mapSPToBoaJornada(item: any): BoaJornadaInfoGerais {
 }
 
 export function mapBoaJornadaToSP(data: {
-    supervisao: string;
-    area: string;
+    //supervisao: string;
+    //area: string;
     data: string;
     coordenacao: string;
     gerencia: string;
-    riscosMaiorIndice: string;
+    // riscosMaiorIndice: string;
     detalhamento: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }): Record<string, any> {
     return {
-        [f.BoaJornadaInfoGerais.Title]: `Boa Jornada - ${data.area} - ${data.data}`,
+        [f.BoaJornadaInfoGerais.Title]: `Boa Jornada - ${data.coordenacao} - ${data.data}`,
         [f.BoaJornadaInfoGerais.Data]: data.data,
-        [f.BoaJornadaInfoGerais.Supervisao]: data.supervisao,
-        [f.BoaJornadaInfoGerais.Area]: data.area,
+        // [f.BoaJornadaInfoGerais.Supervisao]: data.supervisao,
+        //[f.BoaJornadaInfoGerais.Area]: data.area,
         [f.BoaJornadaInfoGerais.Coordenacao]: data.coordenacao,
         [f.BoaJornadaInfoGerais.Gerencia]: data.gerencia,
-        [f.BoaJornadaInfoGerais.RiscosMaiorIndice]: data.riscosMaiorIndice,
+        // [f.BoaJornadaInfoGerais.RiscosMaiorIndice]: data.riscosMaiorIndice,
         [f.BoaJornadaInfoGerais.Detalhamento]: data.detalhamento,
     };
 }
@@ -56,20 +56,16 @@ export function mapBoaJornadaToSP(data: {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapSPToAtividade(item: any): BoaJornadaAtividade {
-    let riscoIds: number[] = [];
-    try {
-        const raw = item[f.BoaJornadaAtividade.RiscosCriticos];
-        if (raw) {
-            riscoIds = JSON.parse(raw);
-        }
-    } catch {
-        riscoIds = [];
-    }
+    const raw = item[f.BoaJornadaAtividade.RiscosCriticos];
+
+    const riscoIds: number[] = Array.isArray(raw)
+        ? raw.map((r: any) => r.Id).filter((id: any) => typeof id === 'number')
+        : [];
 
     return {
         id: item.Id,
         title: item[f.BoaJornadaAtividade.Title] || '',
-        jornadaId: item[f.BoaJornadaAtividade.JornadaId] || 0,
+        jornadaId: item[f.BoaJornadaAtividade.JornadaId]?.Id || 0,
         atividade: item[f.BoaJornadaAtividade.Atividade] || '',
         executantes: item[f.BoaJornadaAtividade.Executantes] || '',
         oQuePodeMatar: item[f.BoaJornadaAtividade.OQuePodeMatar] || '',
@@ -84,11 +80,11 @@ export function mapAtividadeToSP(
 ): Record<string, any> {
     return {
         [f.BoaJornadaAtividade.Title]: atividade.atividade.substring(0, 255),
-        [f.BoaJornadaAtividade.JornadaId]: jornadaId,
+        [`${f.BoaJornadaAtividade.JornadaId}Id`]: jornadaId,
         [f.BoaJornadaAtividade.Atividade]: atividade.atividade,
         [f.BoaJornadaAtividade.Executantes]: atividade.executantes,
         [f.BoaJornadaAtividade.OQuePodeMatar]: atividade.oQuePodeMatar,
-        [f.BoaJornadaAtividade.RiscosCriticos]: JSON.stringify(atividade.riscosCriticosIds),
+        [`${f.BoaJornadaAtividade.RiscosCriticos}Id`]: atividade.riscosCriticosIds
     };
 }
 
