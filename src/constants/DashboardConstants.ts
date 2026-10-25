@@ -24,11 +24,11 @@ export const VOLTAGE_THRESHOLDS = {
 
 /** Limites de resistência individual (Ω) — Ideal: 2.5Ω */
 export const RESISTANCE_THRESHOLDS = {
-  ideal: 2.5,
+  ideal: 3.7,
   /** Abaixo deste valor = EXCELENTE */
-  excellentMax: 4.0,
+  excellentMax: 3.7,
   /** Entre excellentMax e alertMax = ALERTA */
-  alertMax: 6.5,
+  alertMax: 4.0,
   /** Acima de alertMax = CRITICO */
 } as const;
 
@@ -48,14 +48,14 @@ export interface BankRule {
   description: string;
 }
 
-export type Locations = ['TU', 'CV', 'MO', 'CANCELA', 'TE', 'HBD', 'AMV']
+export type Locations = ['TU', 'CV', 'MO', 'CANCELA', 'TE', 'HBD', 'AMV', 'CCP', 'ABR', 'ABRA', 'ABRB']
 
 export const BANK_RULES: Record<LocationType, BankRule> = {
   TU: {
     totalBatteries: 20,
     numberOfBanks: 2,
     batteriesPerBank: [10, 10],
-    description: 'Túnel — 2 bancos de 10 baterias',
+    description: 'TU — 2 bancos de 10 baterias',
   },
   CV: {
     totalBatteries: 2,
@@ -88,11 +88,35 @@ export const BANK_RULES: Record<LocationType, BankRule> = {
     description: 'HotBox — 1 banco de 6 baterias',
   },
   AMV: {
-    totalBatteries: 2,
+    totalBatteries: 10,
     numberOfBanks: 1,
-    batteriesPerBank: [2],
-    description: '1 banco de 2 baterias',
+    batteriesPerBank: [10],
+    description: '1 banco de 10 baterias',
   },
+  CCP: {
+    totalBatteries: 4,
+    numberOfBanks: 1,
+    batteriesPerBank: [4],
+    description: '1 banco de 4 baterias',
+  },
+  ABR: {
+    totalBatteries: 20,
+    numberOfBanks: 2,
+    batteriesPerBank: [10, 10],
+    description: 'Abrigo — 2 bancos de 10 baterias',
+  },
+  ABRA: {
+    totalBatteries: 20,
+    numberOfBanks: 2,
+    batteriesPerBank: [10, 10],
+    description: 'Abrigo — 2 bancos de 10 baterias',
+  },
+  ABRB: {
+    totalBatteries: 48,
+    numberOfBanks: 2,
+    batteriesPerBank: [24, 24],
+    description: 'Abrigo — 2 bancos de 24 baterias',
+  }
 };
 
 // ─── Paleta de Cores por Status ──────────────────────────────────────────────
@@ -148,7 +172,11 @@ export const LOCATION_RULES: Record<string, LocationRule> = {
   CV: { banks: 1, batteriesPerBank: 2, total: 2 },
   TE: { banks: 1, batteriesPerBank: 2, total: 2 },
   MO: { banks: 2, batteriesPerBank: 24, total: 48 },
-  AMV: { banks: 1, batteriesPerBank: 2, total: 2 },
+  AMV: { banks: 1, batteriesPerBank: 10, total: 10 },
+  CCP: { banks: 1, batteriesPerBank: 4, total: 4 },
+  ABR: { banks: 2, batteriesPerBank: 10, total: 20 },
+  ABRA: { banks: 2, batteriesPerBank: 10, total: 20 },
+  ABRB: { banks: 2, batteriesPerBank: 24, total: 48 },
 } as const;
 
 // ─── Cores da Vale ───────────────────────────────────────────────────────────
@@ -200,6 +228,7 @@ export const SP_FIELDS = {
     IDLocal: 'IDLocal',      // Consulta (lookup para 'km das LI')
     IDLocalId: 'IDLocalId',  // ID do lookup
     Status: 'Status',        // Ativa / Inativa
+    Supervisao: 'Supervis_x00e3_o',  // Supervisão do local
   },
   Measurements: {
     Title: 'Title',

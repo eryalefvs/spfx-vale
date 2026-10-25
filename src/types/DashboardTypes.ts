@@ -11,7 +11,7 @@
 export type BatteryStatus = 'EXCELENTE' | 'ALERTA' | 'CRITICO';
 
 /** Tipos de local de instalação com suas regras de bancos */
-export type LocationType = 'TU' | 'CV' | 'MO' | 'CANCELA' | 'TE' | 'HBD' | 'AMV';
+export type LocationType = 'TU' | 'CV' | 'MO' | 'CANCELA' | 'TE' | 'HBD' | 'AMV' | 'CCP' | 'ABR' | 'ABRA' | 'ABRB';
 
 // ─── Interfaces SharePoint Raw ───────────────────────────────────────────────
 // Representam exatamente como os dados chegam do SharePoint.

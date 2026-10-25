@@ -199,3 +199,11 @@ export interface ActivityDetail {
   measurements: Measurement[];
   batteriesInspected: number;
 }
+
+/** Informação de bancos desabilitados (sem baterias ativas) em um local */
+export interface DisabledBankInfo {
+  location: Location;
+  expectedBanks: number;         // Qtd de bancos esperados pela regra
+  activeBanks: number[];         // Bancos que possuem baterias ativas
+  disabledBanks: number[];       // Bancos sem baterias ativas
+}
