@@ -16,18 +16,21 @@ type AppView = 'home' | 'form' | 'history' | 'detail';
 interface IAppState {
   currentView: AppView;
   selectedJornadaId: number | undefined;
+  userDisplayName: string;
 }
 
-const CrmBoaJornada: React.FC<ICrmBoaJornadaProps> = () => {
+const CrmBoaJornada: React.FC<ICrmBoaJornadaProps> = ({ userDisplayName }) => {
   const [state, setState] = React.useState<IAppState>({
     currentView: 'home',
     selectedJornadaId: undefined,
+    userDisplayName: userDisplayName
   });
 
   const navigateTo = (view: AppView, jornadaId?: number): void => {
     setState({
       currentView: view,
       selectedJornadaId: jornadaId || undefined,
+      userDisplayName: userDisplayName
     });
   };
 
@@ -38,6 +41,7 @@ const CrmBoaJornada: React.FC<ICrmBoaJornadaProps> = () => {
           <HomePage
             onNewJornada={() => navigateTo('form')}
             onViewHistory={() => navigateTo('history')}
+            userDisplayName={userDisplayName}
           />
         );
       case 'form':

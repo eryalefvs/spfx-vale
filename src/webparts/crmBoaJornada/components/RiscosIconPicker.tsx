@@ -81,6 +81,7 @@ export const RiscosIconPicker: React.FC<IRiscosIconPickerProps> = ({
                   ) : (
                     <div className={styles.pickerItemIcon}>⚠️</div>
                   )}
+                  <span className={styles.pickerItemLabel}>{risco.racAssociado}</span>
                   <span className={styles.pickerItemLabel}>
                     {risco.title}
                   </span>

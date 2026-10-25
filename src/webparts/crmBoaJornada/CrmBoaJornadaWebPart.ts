@@ -23,7 +23,8 @@ export default class CrmBoaJornadaWebPart extends BaseClientSideWebPart<ICrmBoaJ
     const element: React.ReactElement<ICrmBoaJornadaProps> = React.createElement(
       CrmBoaJornada,
       {
-        context: this.context
+        context: this.context,
+        userDisplayName: this.context.pageContext.user.displayName
       }
     );
 

@@ -6,26 +6,39 @@
 import * as React from 'react';
 import styles from './CrmBoaJornada.module.scss';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports 
+const imagem1 = require('../../../../images/imagem11.png');
+
 export interface IHomePageProps {
   onNewJornada: () => void;
   onViewHistory: () => void;
+  userDisplayName: string;
 }
 
 export const HomePage: React.FC<IHomePageProps> = ({
   onNewJornada,
   onViewHistory,
+  userDisplayName
 }) => {
+
+  const name = userDisplayName;
   return (
     <div className={styles.homePage}>
       <div className={styles.homeContent}>
 
         {/* Logo */}
         <div className={styles.homeLogoContainer}>
-          <span className={styles.homeLogo}>CRM</span>
+          <img src={imagem1} alt="" />
+          <span className={styles.homeLogo}>Boa Jornada</span>
         </div>
-
         {/* Título */}
-        <h1 className={styles.homeTitle}>Boa Jornada</h1>
+        {/* <h1 className={styles.homeTitle}>Boa Jornada</h1> */}
+        <span style={{
+          marginBottom: '5px',
+          marginTop: '5px',
+          fontSize: '20px',
+          color: '#555555'
+        }}>Olá, {name}</span>
         <p className={styles.homeSubtitle}>
           Sistema de registro de atividades de campo — Controle de Riscos em Manutenção.
           Registre as atividades, executantes e riscos críticos aplicáveis.

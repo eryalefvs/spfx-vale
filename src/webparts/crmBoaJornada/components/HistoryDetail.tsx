@@ -14,6 +14,7 @@ import {
 } from '../../../models/BoajornadaModels';
 import { BoaJornadaService } from '../../../services/BoaJornadaService';
 import { RiscosIconPicker } from './RiscosIconPicker';
+import { FontSizes } from '@fluentui/react';
 
 export interface IHistoryDetailProps {
   jornadaId: number;
@@ -182,18 +183,20 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
 
   if (loading) {
     return (
-      <div className={styles.detailContainer}>
-        <div className={styles.detailHeader}>
-          <div className={styles.detailHeaderLeft}>
-            <button className={styles.formBackButton} onClick={onBack} title="Voltar">
-              ←
-            </button>
-            <h1 className={styles.detailTitle}>Boa Jornada</h1>
+      <div className={styles.homePage}>
+        <div className={styles.detailContainer}>
+          <div className={styles.detailHeader}>
+            <div className={styles.detailHeaderLeft}>
+              <button className={styles.formBackButton} onClick={onBack} title="Voltar">
+                ←
+              </button>
+              <h1 className={styles.detailTitle}>Boa Jornada</h1>
+            </div>
           </div>
-        </div>
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} />
-          <span className={styles.loadingText}>Carregando...</span>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner} />
+            <span className={styles.loadingText}>Carregando...</span>
+          </div>
         </div>
       </div>
     );
@@ -204,215 +207,216 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
-    <div className={styles.detailContainer}>
-      {/* Toast */}
-      {toast && (
-        <div className={toast.type === 'success' ? styles.successToast : styles.errorToast}>
-          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
-        </div>
-      )}
+    <div className={styles.homePage}>
+      <div className={styles.detailContainer}>
+        {/* Toast */}
+        {toast && (
+          <div className={toast.type === 'success' ? styles.successToast : styles.errorToast}>
+            {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+          </div>
+        )}
 
-      {/* Header */}
-      <div className={styles.detailHeader}>
-        <div className={styles.detailHeaderLeft}>
-          <button className={styles.formBackButton} onClick={onBack} title="Voltar">
-            ←
-          </button>
-          <h1 className={styles.detailTitle}>Boa Jornada</h1>
+        {/* Header */}
+        <div className={styles.detailHeader}>
+          <div className={styles.detailHeaderLeft}>
+            <button className={styles.formBackButton} onClick={onBack} title="Voltar">
+              ←
+            </button>
+            <h1 className={styles.detailTitle}>Boa Jornada</h1>
+          </div>
+          <div className={styles.formHeaderRight}>
+            <span className={styles.formHeaderLogo}>CRM</span>
+            <span className={styles.formHeaderLogoCheck}>✓</span>
+          </div>
         </div>
-        <div className={styles.formHeaderRight}>
-          <span className={styles.formHeaderLogo}>CRM</span>
-          <span className={styles.formHeaderLogoCheck}>✓</span>
-        </div>
-      </div>
 
-      {/* Campos (somente leitura) */}
-      <div className={styles.detailFieldsRow}>
-        <div className={styles.detailFieldGroup}>
-          <span className={styles.detailFieldLabel}>Supervisão:</span>
-          <div className={styles.detailFieldValue}>{infoGerais.supervisao || '—'}</div>
+        {/* Campos (somente leitura) */}
+        <div className={styles.detailFieldsRow}>
+          <div className={styles.detailFieldGroup}>
+            <span className={styles.detailFieldLabel}>Gerência:</span>
+            <div className={styles.detailFieldValue}>{infoGerais.gerencia || '—'}</div>
+          </div>
+          <div className={styles.detailFieldGroup}>
+            <span className={styles.detailFieldLabel}>Coordenação:</span>
+            <div className={styles.detailFieldValue}>{infoGerais.coordenacao || '—'}</div>
+          </div>
+          <div className={styles.detailFieldGroup}>
+            <span className={styles.detailFieldLabel}>Data:</span>
+            <div className={styles.detailFieldValue}>{formatDate(infoGerais.data)}</div>
+          </div>
         </div>
-        <div className={styles.detailFieldGroup}>
-          <span className={styles.detailFieldLabel}>Área:</span>
-          <div className={styles.detailFieldValue}>{infoGerais.area || '—'}</div>
-        </div>
-        <div className={styles.detailFieldGroup}>
-          <span className={styles.detailFieldLabel}>Data:</span>
-          <div className={styles.detailFieldValue}>{formatDate(infoGerais.data)}</div>
-        </div>
-      </div>
 
-      {/* Tabela de Atividades */}
-      <div className={styles.detailTableSection}>
-        {!editing ? (
-          // ── Modo leitura ─────────────────────────────────────────────
-          <>
-            <table className={styles.detailTable}>
-              <thead>
-                <tr>
-                  <th style={{ width: '28%' }}>Atividades</th>
-                  <th style={{ width: '20%' }}>Executantes</th>
-                  <th style={{ width: '28%' }}>O que pode matar?</th>
-                  <th style={{ width: '24%' }}>Riscos Críticos aplicáveis?</th>
-                </tr>
-              </thead>
-              <tbody>
-                {atividades.length === 0 ? (
+        {/* Tabela de Atividades */}
+        <div className={styles.detailTableSection}>
+          {!editing ? (
+            // ── Modo leitura ─────────────────────────────────────────────
+            <>
+              <table className={styles.detailTable}>
+                <thead>
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#999' }}>
-                      Nenhuma atividade registrada.
-                    </td>
+                    <th style={{ width: '28%' }}>Atividades</th>
+                    <th style={{ width: '20%' }}>Executantes</th>
+                    <th style={{ width: '28%' }}>O que pode matar?</th>
+                    <th style={{ width: '24%' }}>Riscos Críticos aplicáveis?</th>
                   </tr>
-                ) : (
-                  atividades.map((ativ) => (
-                    <tr key={ativ.id}>
-                      <td>{ativ.atividade}</td>
-                      <td>{ativ.executantes}</td>
-                      <td>{ativ.oQuePodeMatar}</td>
+                </thead>
+                <tbody>
+                  {atividades.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#999' }}>
+                        Nenhuma atividade registrada.
+                      </td>
+                    </tr>
+                  ) : (
+                    atividades.map((ativ) => (
+                      <tr key={ativ.id}>
+                        <td style={{ fontSize: '20px' }}>{ativ.atividade}</td>
+                        <td style={{ fontSize: '20px' }}>{ativ.executantes}</td>
+                        <td style={{ fontSize: '20px' }}>{ativ.oQuePodeMatar}</td>
+                        <td>
+                          <div className={styles.detailRiscosCell}>
+                            {ativ.riscosCriticosIds.map((rId) => {
+                              const risco = getRiscoById(rId);
+                              return risco?.iconeUrl ? (
+                                <img
+                                  key={rId}
+                                  src={risco.iconeUrl}
+                                  alt={risco.title}
+                                  className={styles.detailRiscoIcon}
+                                  title={risco.title}
+                                />
+                              ) : null;
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+
+              {/* Botão editar */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                <button className={styles.btnEdit} onClick={startEditing}>
+                  ✏️ Editar Atividades
+                </button>
+              </div>
+            </>
+          ) : (
+            // ── Modo edição ──────────────────────────────────────────────
+            <>
+              <table className={styles.activityTable}>
+                <thead className={styles.tableHeader}>
+                  <tr>
+                    <th style={{ width: '28%' }}>
+                      <span className={styles.tableHeaderTitle}>Atividades</span>
+                    </th>
+                    <th style={{ width: '20%' }}>
+                      <span className={styles.tableHeaderTitle}>Executantes</span>
+                    </th>
+                    <th style={{ width: '28%' }}>
+                      <span className={styles.tableHeaderTitle}>O que pode matar?</span>
+                    </th>
+                    <th style={{ width: '20%' }}>
+                      <span className={styles.tableHeaderTitle}>Riscos Críticos</span>
+                    </th>
+                    <th style={{ width: '4%' }}>{/* Ações */}</th>
+                  </tr>
+                </thead>
+                <tbody className={styles.tableBody}>
+                  {editRows.map((row, index) => (
+                    <tr key={row.tempId}>
                       <td>
-                        <div className={styles.detailRiscosCell}>
-                          {ativ.riscosCriticosIds.map((rId) => {
+                        <textarea
+                          className={styles.tableCellInput}
+                          value={row.atividade}
+                          onChange={(e) => updateEditRow(index, 'atividade', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          className={styles.tableCellInput}
+                          value={row.executantes}
+                          onChange={(e) => updateEditRow(index, 'executantes', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <textarea
+                          className={styles.tableCellInput}
+                          value={row.oQuePodeMatar}
+                          onChange={(e) => updateEditRow(index, 'oQuePodeMatar', e.target.value)}
+                        />
+                      </td>
+                      <td>
+                        <div className={styles.tableCellRiscos}>
+                          {row.riscosCriticosIds.map((rId) => {
                             const risco = getRiscoById(rId);
                             return risco?.iconeUrl ? (
                               <img
                                 key={rId}
                                 src={risco.iconeUrl}
                                 alt={risco.title}
-                                className={styles.detailRiscoIcon}
+                                className={styles.riscoIconSelected}
                                 title={risco.title}
                               />
                             ) : null;
                           })}
+                          <button
+                            className={styles.addRiscoButton}
+                            onClick={() => openPicker(index)}
+                            title="Selecionar riscos"
+                          >
+                            +
+                          </button>
                         </div>
                       </td>
+                      <td>
+                        {editRows.length > 1 && (
+                          <button
+                            className={styles.removeRowButton}
+                            onClick={() => removeEditRow(index)}
+                            title="Remover"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
 
-            {/* Botão editar */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-              <button className={styles.btnEdit} onClick={startEditing}>
-                ✏️ Editar Atividades
+              <button className={styles.addRowButton} onClick={addEditRow}>
+                + Adicionar Atividade
               </button>
-            </div>
-          </>
-        ) : (
-          // ── Modo edição ──────────────────────────────────────────────
-          <>
-            <table className={styles.activityTable}>
-              <thead className={styles.tableHeader}>
-                <tr>
-                  <th style={{ width: '28%' }}>
-                    <span className={styles.tableHeaderTitle}>Atividades</span>
-                  </th>
-                  <th style={{ width: '20%' }}>
-                    <span className={styles.tableHeaderTitle}>Executantes</span>
-                  </th>
-                  <th style={{ width: '28%' }}>
-                    <span className={styles.tableHeaderTitle}>O que pode matar?</span>
-                  </th>
-                  <th style={{ width: '20%' }}>
-                    <span className={styles.tableHeaderTitle}>Riscos Críticos</span>
-                  </th>
-                  <th style={{ width: '4%' }}>{/* Ações */}</th>
-                </tr>
-              </thead>
-              <tbody className={styles.tableBody}>
-                {editRows.map((row, index) => (
-                  <tr key={row.tempId}>
-                    <td>
-                      <textarea
-                        className={styles.tableCellInput}
-                        value={row.atividade}
-                        onChange={(e) => updateEditRow(index, 'atividade', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <textarea
-                        className={styles.tableCellInput}
-                        value={row.executantes}
-                        onChange={(e) => updateEditRow(index, 'executantes', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <textarea
-                        className={styles.tableCellInput}
-                        value={row.oQuePodeMatar}
-                        onChange={(e) => updateEditRow(index, 'oQuePodeMatar', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <div className={styles.tableCellRiscos}>
-                        {row.riscosCriticosIds.map((rId) => {
-                          const risco = getRiscoById(rId);
-                          return risco?.iconeUrl ? (
-                            <img
-                              key={rId}
-                              src={risco.iconeUrl}
-                              alt={risco.title}
-                              className={styles.riscoIconSelected}
-                              title={risco.title}
-                            />
-                          ) : null;
-                        })}
-                        <button
-                          className={styles.addRiscoButton}
-                          onClick={() => openPicker(index)}
-                          title="Selecionar riscos"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-                    <td>
-                      {editRows.length > 1 && (
-                        <button
-                          className={styles.removeRowButton}
-                          onClick={() => removeEditRow(index)}
-                          title="Remover"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
 
-            <button className={styles.addRowButton} onClick={addEditRow}>
-              + Adicionar Atividade
-            </button>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-              <button className={styles.btnCancel} onClick={cancelEditing}>
-                Cancelar
-              </button>
-              <button
-                className={styles.btnSave}
-                onClick={saveEdits}
-                disabled={saving}
-              >
-                {saving ? 'Salvando...' : '💾 Salvar Alterações'}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Seção Inferior (somente leitura) */}
-      <div className={styles.detailBottomSection}>
-        <div className={styles.detailBottomCell}>
-          <span className={styles.detailBottomLabel}>
-            Riscos Críticos com maior índice de desvios:
-          </span>
-          <span className={styles.detailBottomValue}>
-            {infoGerais.riscosMaiorIndice || '—'}
-          </span>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                <button className={styles.btnCancel} onClick={cancelEditing}>
+                  Cancelar
+                </button>
+                <button
+                  className={styles.btnSave}
+                  onClick={saveEdits}
+                  disabled={saving}
+                >
+                  {saving ? 'Salvando...' : '💾 Salvar Alterações'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
-        <div className={styles.detailBottomCell}>
+
+        {/* Seção Inferior (somente leitura) */}
+        <div className={styles.detailBottomSection}>
+          <div className={styles.detailBottomCell}>
+            <span className={styles.detailBottomLabel}>
+              Riscos Críticos com maior índice de desvios:
+            </span>
+            <span className={styles.detailBottomValue}>
+              {infoGerais.riscosMaiorIndice || '—'}
+            </span>
+          </div>
+          {/* <div className={styles.detailBottomCell}>
           <span className={styles.detailBottomLabel}>Coordenação</span>
           <span className={styles.detailBottomValue}>
             {infoGerais.coordenacao || '—'}
@@ -423,24 +427,25 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
           <span className={styles.detailBottomValue}>
             {infoGerais.gerencia || '—'}
           </span>
+        </div> */}
+          <div className={styles.detailBottomCell}>
+            <span className={styles.detailBottomLabel}>Detalhamento dos desvios:</span>
+            <span className={styles.detailBottomValue}>
+              {infoGerais.detalhamento || '—'}
+            </span>
+          </div>
         </div>
-        <div className={styles.detailBottomCell}>
-          <span className={styles.detailBottomLabel}>Detalhamento dos desvios:</span>
-          <span className={styles.detailBottomValue}>
-            {infoGerais.detalhamento || '—'}
-          </span>
-        </div>
-      </div>
 
-      {/* Picker Modal */}
-      {pickerOpen && (
-        <RiscosIconPicker
-          riscos={riscos}
-          selectedIds={editRows[pickerRowIndex]?.riscosCriticosIds || []}
-          onConfirm={handlePickerConfirm}
-          onCancel={() => setPickerOpen(false)}
-        />
-      )}
+        {/* Picker Modal */}
+        {pickerOpen && (
+          <RiscosIconPicker
+            riscos={riscos}
+            selectedIds={editRows[pickerRowIndex]?.riscosCriticosIds || []}
+            onConfirm={handlePickerConfirm}
+            onCancel={() => setPickerOpen(false)}
+          />
+        )}
+      </div>
     </div>
   );
 };

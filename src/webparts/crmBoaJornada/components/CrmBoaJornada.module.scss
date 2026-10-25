@@ -5,7 +5,8 @@
 
 // ─── Variáveis ───────────────────────────────────────────────────────────────
 
-$crm-pink: #A8235E;
+//$crm-pink: #A8235E;
+$crm-pink: #c0305e;
 $crm-pink-dark: #8B1C4E;
 $crm-pink-light: #C73A76;
 $crm-teal: #008080;
@@ -52,9 +53,10 @@ $transition: all 0.2s ease;
 
 .homePage {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: initial;
+  justify-content: start;
   min-height: 100vh;
+  //max-width: 80vh;
   padding: 48px 32px;
   background: linear-gradient(160deg, #FFF0F5 0%, $bg-page 40%, #F0FFFF 100%);
 }
@@ -64,20 +66,28 @@ $transition: all 0.2s ease;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 720px;
+  padding: 50px;
+  min-height: 90vh;
+  min-width: 30vh;
   width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .homeLogoContainer {
-  width: 120px;
+  width: 200px;
   height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
-  border-radius: 50%;
-  background: rgba($crm-pink, 0.08);
-  border: 3px solid rgba($crm-pink, 0.15);
+  margin-bottom: 200px;
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  //border-radius: 50%;
+  //background: rgba($crm-pink, 0.08);
+  //border: 3px solid rgba($crm-pink, 0.15);
 }
 
 .homeLogo {
@@ -174,7 +184,11 @@ $transition: all 0.2s ease;
 .formContainer {
   width: 100%;
   background: $crm-pink;
-  min-height: 100vh;
+  min-height: 90vh;
+  min-width: 30vh;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 // ── Header ──────────────────────────────────────────────────────────────────
@@ -185,6 +199,8 @@ $transition: all 0.2s ease;
   justify-content: space-between;
   padding: 20px 32px;
   background: $crm-pink;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 .formHeaderLeft {
@@ -339,7 +355,7 @@ $transition: all 0.2s ease;
 
 .tableHeaderTitle {
   display: block;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -350,7 +366,7 @@ $transition: all 0.2s ease;
   background: $crm-yellow;
   border-radius: 3px;
   color: $text-primary;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -387,7 +403,7 @@ $transition: all 0.2s ease;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 22px;
   color: $text-primary;
   resize: vertical;
   box-sizing: border-box;
@@ -408,12 +424,12 @@ $transition: all 0.2s ease;
   align-items: flex-start;
   gap: 6px;
   padding: 8px;
-  min-height: 80px;
+  min-height: 90px;
 }
 
 .riscoIconSelected {
-  width: 40px;
-  height: 40px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   border-radius: 4px;
   cursor: pointer;
@@ -493,7 +509,7 @@ $transition: all 0.2s ease;
 
 .bottomSection {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   background: $crm-white;
   border: 2px solid $crm-teal;
   border-radius: $radius-sm;
@@ -556,7 +572,7 @@ $transition: all 0.2s ease;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 20px;
   color: $text-primary;
   resize: vertical;
   box-sizing: border-box;
@@ -650,9 +666,9 @@ $transition: all 0.2s ease;
   background: $bg-card;
   border-radius: $radius-lg;
   box-shadow: $shadow-lg;
-  width: 560px;
-  max-width: 90vw;
-  max-height: 80vh;
+  width: 620px;
+  max-width: 96vw;
+  max-height: 86vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -701,7 +717,7 @@ $transition: all 0.2s ease;
 
 .pickerGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 12px;
 }
 
@@ -737,7 +753,7 @@ $transition: all 0.2s ease;
 }
 
 .pickerItemLabel {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 600;
   color: $text-secondary;
   line-height: 1.3;
@@ -793,7 +809,10 @@ $transition: all 0.2s ease;
 .historyContainer {
   width: 100%;
   min-height: 100vh;
-  background: $bg-page;
+  min-width: 30vh;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .historyHeader {
@@ -802,6 +821,8 @@ $transition: all 0.2s ease;
   gap: 16px;
   padding: 20px 32px;
   background: $crm-pink;
+  border-radius: 10px;
+  border: 1px solid #ccc;
 }
 
 .historyBackButton {
@@ -948,6 +969,10 @@ $transition: all 0.2s ease;
   width: 100%;
   background: $crm-pink;
   min-height: 100vh;
+  min-width: 30vh;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .detailHeader {
@@ -1081,14 +1106,14 @@ $transition: all 0.2s ease;
 }
 
 .detailRiscoIcon {
-  width: 40px;
-  height: 40px;
+  width: 90px;
+  height: 90px;
   object-fit: contain;
 }
 
 .detailBottomSection {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 2fr;
+  grid-template-columns: 1fr 1fr;
   background: $crm-white;
   border: 2px solid $crm-teal;
   border-radius: $radius-sm;
@@ -1186,27 +1211,49 @@ $transition: all 0.2s ease;
 // ─── Animations ─────────────────────────────────────────────────────────────
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 // ─── Print / Screenshot Optimization ────────────────────────────────────────
 
 @media print {
+
   .formBackButton,
   .formActions,
   .addRowButton,
