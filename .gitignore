@@ -41,3 +41,12 @@ obj
 # Implementation Plans
 **/*implementation_plan*.md
 /teams
+
+# artigo
+/artigo
+
+#arquivos internos
+*.md
+metrics.js
+Pasta1.xlsx
+*.csv
