@@ -14,5 +14,6 @@ export const ListNames = {
     // Listas Boa Jornada
     BoaJornadaInfoGerais: "BoaJornadaInfoGerais",
     BoaJornadaAtividade: "BoaJornadaAtividade",
-    IconeRiscosCriticos: "Ícones Riscos Críticos"
+    IconeRiscosCriticos: "Ícones Riscos Críticos",
+    Responsaveis: "Baterias - Responsaveis"
 };

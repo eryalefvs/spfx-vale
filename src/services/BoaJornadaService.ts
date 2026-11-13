@@ -11,20 +11,26 @@ import {
     BoaJornadaAtividade,
     RiscoCriticoIcone,
     BoaJornadaFormData,
-    AtividadeFormRow
+    AtividadeFormRow,
+    Sede,
+    Responsavel
 } from '../models/BoajornadaModels';
 import {
     mapSPToBoaJornada,
     mapBoaJornadaToSP,
     mapSPToAtividade,
     mapAtividadeToSP,
-    mapSPToRiscoCritico
+    mapAtividadeFieldsToSP,
+    mapSPToSede,
+    mapSPToResponsavel
 } from '../mappers/BoaJornadaMapper';
 import '@pnp/sp/attachments';
 
 const fInfo = SP_FIELDS_BOAJORNADA.BoaJornadaInfoGerais;
 const fAtiv = SP_FIELDS_BOAJORNADA.BoaJornadaAtividade;
 const fRisco = SP_FIELDS_BOAJORNADA.IconeRiscosCriticos;
+const fSede = SP_FIELDS_BOAJORNADA.Sedes;
+const fResp = SP_FIELDS_BOAJORNADA.Responsaveis;
 
 export class BoaJornadaService {
 
@@ -106,7 +112,36 @@ export class BoaJornadaService {
         return riscos;
     }
 
+    // ── Listas auxiliares (Sedes / Responsáveis) ────────────────────────
+
+    /** Carrega a lista 'Sedes' (fonte das coordenações) */
+    public async loadSedes(): Promise<Sede[]> {
+        const sp = SharePointService.sp;
+        const items = await sp.web.lists
+            .getByTitle(ListNames.Sedes)
+            .items.select('Id', fSede.Sede, fSede.Supervisao, fSede.Gerencia)
+            .top(1000)();
+        return items.map(mapSPToSede);
+    }
+
+    /** Carrega os responsáveis ativos (fonte dos executantes) */
+    public async loadResponsaveis(): Promise<Responsavel[]> {
+        const sp = SharePointService.sp;
+        const items = await sp.web.lists
+            .getByTitle(ListNames.Responsaveis)
+            .items.select('Id', fResp.Nome, fResp.Supervisao, fResp.Gerencia, fResp.Matricula)
+            .filter(`${fResp.Ativo} eq 1`)
+            .orderBy(fResp.Nome, true)
+            .top(5000)();
+        return items.map(mapSPToResponsavel);
+    }
+
     // ── Informações Gerais ──────────────────────────────────────────────
+
+    private readonly infoFields = [
+        'Id', fInfo.Title, fInfo.Data, fInfo.Coordenacao, fInfo.Gerencia,
+        fInfo.Detalhamento, fInfo.RiscosMaiorIndice, fInfo.Tema, fInfo.Semana, fInfo.SemanaId
+    ];
 
     /** Lista todas as Boa Jornadas (para histórico) */
     public async loadBoaJornadas(): Promise<BoaJornadaInfoGerais[]> {
@@ -114,10 +149,7 @@ export class BoaJornadaService {
 
         const items = await sp.web.lists
             .getByTitle(ListNames.BoaJornadaInfoGerais)
-            .items.select(
-                'Id', fInfo.Title, fInfo.Data,
-                fInfo.Coordenacao, fInfo.Gerencia, fInfo.Detalhamento
-            )
+            .items.select(...this.infoFields)
             .orderBy(fInfo.Data, false)
             .top(500)();
 
@@ -131,17 +163,28 @@ export class BoaJornadaService {
         const item = await sp.web.lists
             .getByTitle(ListNames.BoaJornadaInfoGerais)
             .items.getById(id)
-            .select(
-                'Id', fInfo.Title, fInfo.Data, fInfo.Coordenacao, fInfo.Gerencia, fInfo.Detalhamento
-            )();
+            .select(...this.infoFields)();
 
         return mapSPToBoaJornada(item);
     }
 
-    /** Salva as informações gerais e retorna o ID criado */
-    public async saveInfoGerais(data: BoaJornadaFormData): Promise<number> {
+    /** Salva as informações gerais de UM dia e retorna o ID criado */
+    public async saveInfoGerais(
+        data: BoaJornadaFormData,
+        dia: string,
+        semanaId: string
+    ): Promise<number> {
         const sp = SharePointService.sp;
-        const spItem = mapBoaJornadaToSP(data);
+        const spItem = mapBoaJornadaToSP({
+            data: dia,
+            coordenacao: data.coordenacao,
+            gerencia: data.gerencia,
+            riscosMaiorIndice: data.riscosMaiorIndice,
+            detalhamento: data.detalhamento,
+            tema: data.tema,
+            semana: data.modo === 'semana' ? data.semanaNome : '',
+            semanaId,
+        });
 
         const result = await sp.web.lists
             .getByTitle(ListNames.BoaJornadaInfoGerais)
@@ -161,6 +204,7 @@ export class BoaJornadaService {
             .items.select(
                 'Id', fAtiv.Title, 'JornadaID/Id', fAtiv.Atividade,
                 fAtiv.Executantes, fAtiv.OQuePodeMatar, 'RiscosCriticos/Id',
+                fAtiv.TipoAtividade, fAtiv.StatusAtividade, fAtiv.PontosAtencao,
             )
             .expand('JornadaID', 'RiscosCriticos')
             .filter(`JornadaID/Id eq ${jornadaId}`)
@@ -196,12 +240,7 @@ export class BoaJornadaService {
         await sp.web.lists
             .getByTitle(ListNames.BoaJornadaAtividade)
             .items.getById(atividadeId)
-            .update({
-                [fAtiv.Atividade]: atividade.atividade,
-                [fAtiv.Executantes]: atividade.executantes,
-                [fAtiv.OQuePodeMatar]: atividade.oQuePodeMatar,
-                [fAtiv.RiscosCriticos]: JSON.stringify(atividade.riscosCriticosIds),
-            });
+            .update(mapAtividadeFieldsToSP(atividade));
     }
 
     /** Exclui uma atividade */
@@ -216,14 +255,26 @@ export class BoaJornadaService {
 
     // ── Fluxo Completo ──────────────────────────────────────────────────
 
-    /** Salva toda a Boa Jornada (info gerais + atividades) */
-    public async saveBoaJornadaCompleta(data: BoaJornadaFormData): Promise<number> {
-        // 1. Salva info gerais → obtém ID
-        const jornadaId = await this.saveInfoGerais(data);
+    /**
+     * Salva toda a Boa Jornada (info gerais + atividades).
+     * Modo 'dia': cria 1 registro. Modo 'semana': cria 1 registro por dia
+     * incluído (com atividades), todos com o mesmo SemanaId/Semana.
+     */
+    public async saveBoaJornadaCompleta(data: BoaJornadaFormData): Promise<number[]> {
+        const semanaId = data.modo === 'semana'
+            ? `sem_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+            : '';
+        const ids: number[] = [];
 
-        // 2. Salva atividades vinculadas
-        await this.saveAtividades(jornadaId, data.atividades);
+        for (const dia of data.dias) {
+            if (!dia.incluido) continue;
+            if (!dia.atividades.some((a) => a.atividade.trim())) continue;
 
-        return jornadaId;
+            const jornadaId = await this.saveInfoGerais(data, dia.data, semanaId);
+            await this.saveAtividades(jornadaId, dia.atividades);
+            ids.push(jornadaId);
+        }
+
+        return ids;
     }
 }
