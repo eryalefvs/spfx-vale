@@ -317,13 +317,13 @@ $transition: all 0.2s ease;
   flex-direction: column;
   gap: 6px;
 
-  label {
+  > label {
     font-size: 14px;
     font-weight: 600;
     color: $text-primary;
   }
 
-  input,
+  input:not([type="checkbox"]),
   select,
   textarea {
     width: 100%;
@@ -362,6 +362,154 @@ $transition: all 0.2s ease;
     resize: vertical;
     min-height: 80px;
   }
+}
+
+// ─── Multi-Select Retrátil com Checkboxes ────────────────────────────────────
+
+.multiSelectWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.multiSelectTrigger {
+  width: 100%;
+  min-height: 41px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: $radius-sm;
+  background: $bg-card;
+  font-family: inherit;
+  font-size: 14px;
+  color: $text-primary;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: $transition;
+
+  &:hover:not(:disabled) {
+    border-color: #94A3B8;
+  }
+}
+
+.multiSelectTriggerOpen {
+  border-color: $vale-green;
+  box-shadow: 0 0 0 3px rgba($vale-green, 0.1);
+}
+
+.multiSelectTriggerDisabled {
+  background: #F1F5F9;
+  color: $text-muted;
+  cursor: not-allowed;
+}
+
+.multiSelectPlaceholder {
+  color: $text-muted;
+  font-weight: 400;
+}
+
+.multiSelectChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.multiSelectChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba($vale-green, 0.1);
+  color: $vale-green-dark;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.multiSelectChipRemove {
+  border: none;
+  background: transparent;
+  color: $vale-green-dark;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    color: #DC2626;
+  }
+}
+
+.multiSelectChevron {
+  font-size: 11px;
+  color: $text-secondary;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.multiSelectChevronOpen {
+  transform: rotate(180deg);
+}
+
+.multiSelectDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 240px;
+  overflow-y: auto;
+  background: $bg-card;
+  border: 1px solid #CBD5E1;
+  border-radius: $radius-sm;
+  box-shadow: $shadow-md;
+  padding: 6px 0;
+}
+
+.multiSelectOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: $text-primary;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $bg-hover;
+  }
+}
+
+.multiSelectOptionSelected {
+  background: rgba($vale-green, 0.08);
+  font-weight: 600;
+  color: $vale-green-dark;
+}
+
+.multiSelectCheckbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: $vale-green;
+  cursor: pointer;
+}
+
+.multiSelectEmpty {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: $text-muted;
+  text-align: center;
 }
 
 .fullWidth {
@@ -836,6 +984,15 @@ $transition: all 0.2s ease;
     font-size: 14px;
     color: $text-primary;
   }
+}
+
+.successActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+  flex-wrap: wrap;
 }
 
 // ─── Summary Grid ────────────────────────────────────────────────────────────

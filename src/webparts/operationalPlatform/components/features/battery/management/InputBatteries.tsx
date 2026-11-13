@@ -15,6 +15,7 @@ import { BatteryPreviewTable } from './BatteryPreviewTable';
 import { ReplacementPanel } from './ReplacementPanel';
 import { RegisteredBatteriesList } from './RegisteredBatteriesList';
 import { EditBatteriesPanel } from './EditBatteriesPanel';
+import { useOptionalNavigation } from '../../../../../../contexts/NavigationContext';
 
 type TabKey = 'insert' | 'replace';
 
@@ -43,6 +44,29 @@ const InputBatteries: React.FC<IInputBatteriesProps> = ({ userDisplayName }) => 
   const [existingBatteries, setExistingBatteries] = React.useState<Battery[]>([]);
   const [existingBatteriesCount, setExistingBatteriesCount] = React.useState<number>(0);
   const [checkingExisting, setCheckingExisting] = React.useState(false);
+
+  // ── Navegação & Sucesso de Cadastro ────────────────────────────────────
+  const navigation = useOptionalNavigation();
+  const [saveSuccess, setSaveSuccess] = React.useState(false);
+  const [savedInfo, setSavedInfo] = React.useState<{
+    count: number;
+    locationName: string;
+    supervisao?: string;
+    sede?: string;
+    banks: number[];
+  } | null>(null);
+
+  const handleResetAfterSuccess = React.useCallback(() => {
+    setSaveSuccess(false);
+    setSavedInfo(null);
+    setRows([]);
+    setMessage(null);
+    setSelectedLocationId(undefined);
+    setSelectedSede(undefined);
+    setSelectedSupervisao(undefined);
+    setExistingBatteries([]);
+    setExistingBatteriesCount(0);
+  }, []);
 
   // ── Carregar locais ────────────────────────────────────────────────────
   React.useEffect(() => {
@@ -205,7 +229,14 @@ const InputBatteries: React.FC<IInputBatteriesProps> = ({ userDisplayName }) => 
       }));
 
       await BatteryService.addBatteries(batteryData);
-      setMessage({ text: `${rows.length} baterias inseridas com sucesso!`, type: MessageBarType.success });
+      setSavedInfo({
+        count: rows.length,
+        locationName: selectedLocation.localKm || `${selectedLocation.locationType} · KM ${selectedLocation.km}`,
+        supervisao: selectedLocation.supervisao,
+        sede: selectedLocation.sede,
+        banks: Array.from(new Set(rows.map((r) => r.bankNumber))).sort((a, b) => a - b),
+      });
+      setSaveSuccess(true);
       setRows([]);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -221,6 +252,97 @@ const InputBatteries: React.FC<IInputBatteriesProps> = ({ userDisplayName }) => 
       <div className={styles.root}>
         <div className={styles.spinnerOverlay}>
           <Spinner size={SpinnerSize.large} label="Carregando..." />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Render: Tela de Sucesso de Cadastro ────────────────────────────────
+  if (saveSuccess) {
+    return (
+      <div className={styles.root}>
+        {/* Header */}
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <h1>Cadastro de Baterias</h1>
+            <p>Inserção e gerenciamento de baterias</p>
+          </div>
+          <div className={styles.headerRight} />
+        </div>
+
+        <div className={styles.content}>
+          <div className={styles.successMessage}>
+            <div className={styles.successIcon}>✓</div>
+            <h1>Baterias Cadastradas com Sucesso!</h1>
+            <p>Todas as baterias foram inseridas e registradas no sistema.</p>
+
+            {savedInfo && (
+              <div className={styles.successDetails}>
+                {savedInfo.supervisao && (
+                  <p>
+                    <strong>Supervisão:</strong> {savedInfo.supervisao}
+                  </p>
+                )}
+                {savedInfo.sede && (
+                  <p>
+                    <strong>Sede:</strong> {savedInfo.sede}
+                  </p>
+                )}
+                <p>
+                  <strong>Local:</strong> {savedInfo.locationName}
+                </p>
+                <p>
+                  <strong>Quantidade inserida:</strong> {savedInfo.count}{' '}
+                  {savedInfo.count === 1 ? 'bateria' : 'baterias'}
+                </p>
+                {savedInfo.banks.length > 0 && (
+                  <p>
+                    <strong>Bancos atendidos:</strong>{' '}
+                    {savedInfo.banks.map((b) => `Banco ${b}`).join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className={styles.successActions}>
+              <PrimaryButton
+                text="Voltar para o Cadastro"
+                iconProps={{ iconName: 'Back' }}
+                onClick={handleResetAfterSuccess}
+                styles={{
+                  root: {
+                    borderRadius: 8,
+                    height: 40,
+                    paddingLeft: 20,
+                    paddingRight: 20,
+                    fontWeight: 600,
+                  },
+                }}
+              />
+              {navigation && (
+                <DefaultButton
+                  text="Voltar ao Procedimento"
+                  iconProps={{ iconName: 'ChevronLeft' }}
+                  onClick={() =>
+                    navigation.navigateTo({
+                      page: 'procedure',
+                      areaId: 'energia',
+                      procedureId: 'manutencao-baterias',
+                    })
+                  }
+                  styles={{
+                    root: {
+                      borderRadius: 8,
+                      height: 40,
+                      paddingLeft: 20,
+                      paddingRight: 20,
+                      fontWeight: 600,
+                    },
+                  }}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );

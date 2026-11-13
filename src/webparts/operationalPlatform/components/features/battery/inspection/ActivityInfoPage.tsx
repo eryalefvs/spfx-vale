@@ -43,6 +43,8 @@ export const ActivityInfoPage: React.FC<IActivityInfoPageProps> = ({
   const [selectedResponsibleIds, setSelectedResponsibleIds] = React.useState<
     number[]
   >(data.responsibleIds);
+  const [isResponsiblesOpen, setIsResponsiblesOpen] = React.useState(false);
+  const responsiblesDropdownRef = React.useRef<HTMLDivElement>(null);
   const [locationType, setLocationType] = React.useState(
     data.locationType
   );
@@ -64,6 +66,19 @@ export const ActivityInfoPage: React.FC<IActivityInfoPageProps> = ({
   const [error, setError] = React.useState<string | null>(null);
 
   // ── Carregamento dos dropdowns ──────────────────────────────────
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent): void => {
+      if (
+        responsiblesDropdownRef.current &&
+        !responsiblesDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsResponsiblesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   React.useEffect(() => {
     const loadData = async (): Promise<void> => {
@@ -150,6 +165,7 @@ export const ActivityInfoPage: React.FC<IActivityInfoPageProps> = ({
     setSupervision(value);
     setSelectedResponsibles([]);
     setSelectedResponsibleIds([]);
+    setIsResponsiblesOpen(false);
     setSede('');
     setSedeId(0);
     setLocationType('');
@@ -179,19 +195,15 @@ export const ActivityInfoPage: React.FC<IActivityInfoPageProps> = ({
     setKmId(selected?.id || 0);
   };
 
-  const handleResponsiblesChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    const options = Array.from(e.target.selectedOptions);
-    const names = options.map((o) => o.value);
-    const ids = options.map((o) => {
-      const resp = filteredResponsibles.find(
-        (r) => r.title === o.value
-      );
-      return resp?.id || 0;
-    });
-    setSelectedResponsibles(names);
-    setSelectedResponsibleIds(ids);
+  const handleToggleResponsible = (resp: Responsibles): void => {
+    const exists = selectedResponsibleIds.indexOf(resp.id) !== -1;
+    if (exists) {
+      setSelectedResponsibleIds((prev) => prev.filter((id) => id !== resp.id));
+      setSelectedResponsibles((prev) => prev.filter((name) => name !== resp.title));
+    } else {
+      setSelectedResponsibleIds((prev) => [...prev, resp.id]);
+      setSelectedResponsibles((prev) => [...prev, resp.title]);
+    }
   };
 
   // ── Coleta de dados da página ───────────────────────────────────
@@ -368,26 +380,102 @@ export const ActivityInfoPage: React.FC<IActivityInfoPageProps> = ({
 
           {/* Responsáveis */}
           <div className={styles.formGroup}>
-            <label htmlFor="responsibles">
-              Responsáveis
-            </label>
-            <select
-              id="responsibles"
-              multiple
-              value={selectedResponsibles}
-              onChange={handleResponsiblesChange}
-              disabled={!supervision}
-            >
-              {filteredResponsibles.map((r) => (
-                <option key={r.id} value={r.title}>
-                  {r.title}
-                </option>
-              ))}
-            </select>
-            <span className={styles.fieldHint}>
-              Segure Ctrl para selecionar mais de um
-              responsável.
-            </span>
+            <label>Responsáveis</label>
+            <div className={styles.multiSelectWrapper} ref={responsiblesDropdownRef}>
+              <button
+                type="button"
+                id="responsibles"
+                className={[
+                  styles.multiSelectTrigger,
+                  isResponsiblesOpen ? styles.multiSelectTriggerOpen : '',
+                  !supervision ? styles.multiSelectTriggerDisabled : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => {
+                  if (supervision) {
+                    setIsResponsiblesOpen((prev) => !prev);
+                  }
+                }}
+                disabled={!supervision}
+              >
+                {selectedResponsibles.length === 0 ? (
+                  <span className={styles.multiSelectPlaceholder}>
+                    {!supervision
+                      ? 'Selecione a supervisão primeiro...'
+                      : 'Clique para selecionar os responsáveis...'}
+                  </span>
+                ) : (
+                  <div className={styles.multiSelectChips}>
+                    {selectedResponsibles.map((name) => {
+                      const respObj = filteredResponsibles.find((r) => r.title === name);
+                      return (
+                        <span key={name} className={styles.multiSelectChip}>
+                          {name}
+                          {respObj && (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              className={styles.multiSelectChipRemove}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleResponsible(respObj);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  handleToggleResponsible(respObj);
+                                }
+                              }}
+                              title={`Remover ${name}`}
+                            >
+                              ✕
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                <span
+                  className={`${styles.multiSelectChevron} ${
+                    isResponsiblesOpen ? styles.multiSelectChevronOpen : ''
+                  }`}
+                >
+                  ▼
+                </span>
+              </button>
+
+              {isResponsiblesOpen && supervision && (
+                <div className={styles.multiSelectDropdown}>
+                  {filteredResponsibles.length === 0 ? (
+                    <div className={styles.multiSelectEmpty}>
+                      Nenhum responsável encontrado.
+                    </div>
+                  ) : (
+                    filteredResponsibles.map((r) => {
+                      const isChecked = selectedResponsibleIds.indexOf(r.id) !== -1;
+                      return (
+                        <label
+                          key={r.id}
+                          className={`${styles.multiSelectOption} ${
+                            isChecked ? styles.multiSelectOptionSelected : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className={styles.multiSelectCheckbox}
+                            checked={isChecked}
+                            onChange={() => handleToggleResponsible(r)}
+                          />
+                          <span>{r.title}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Tipo de Local */}

@@ -11,13 +11,15 @@ import {
   IQuickMeasurementData,
   IParsedBatteryData,
 } from '../../../../../../models/BatteryInspection';
-import { Location } from '../../../../../../models/DashboardModels';
+import { Location, Responsibles } from '../../../../../../models/DashboardModels';
 import { InspectionService } from '../../../../../../services/InspectionService';
 import {
   LOCATION_RULES,
   STATUS_COLORS,
+  calculateTotalVoltage,
 } from '../../../../../../constants/DashboardConstants';
 import { BatteryStatus } from '../../../../../../types/DashboardTypes';
+import { useOptionalNavigation } from '../../../../../../contexts/NavigationContext';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const logoVale = require('../../../../../../../images/logo-vale-escudo-2048.png');
@@ -34,6 +36,8 @@ interface ManualRow {
 }
 
 export const QuickMeasurementForm: React.FC = () => {
+  const navigation = useOptionalNavigation();
+
   const inspectionService = React.useMemo(
     () => new InspectionService(),
     []
@@ -46,6 +50,9 @@ export const QuickMeasurementForm: React.FC = () => {
   const [sedeId, setSedeId] = React.useState(0);
   const [selectedLocationId, setSelectedLocationId] = React.useState(0);
   const [measurementDate, setMeasurementDate] = React.useState('');
+  const [selectedResponsibles, setSelectedResponsibles] = React.useState<string[]>([]);
+  const [selectedResponsibleIds, setSelectedResponsibleIds] = React.useState<number[]>([]);
+  const [isResponsiblesOpen, setIsResponsiblesOpen] = React.useState(false);
   const [temperature, setTemperature] = React.useState('');
   const [totalVoltage, setTotalVoltage] = React.useState('');
   const [parsedBatteries, setParsedBatteries] = React.useState<
@@ -69,11 +76,26 @@ export const QuickMeasurementForm: React.FC = () => {
   // ── Fontes de dados ───────────────────────────────────────────────
 
   const [locations, setLocations] = React.useState<Location[]>([]);
+  const [responsiblesList, setResponsiblesList] = React.useState<Responsibles[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const pasteAreaRef = React.useRef<HTMLDivElement>(null);
+  const responsiblesDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent): void => {
+      if (
+        responsiblesDropdownRef.current &&
+        !responsiblesDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsResponsiblesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // ── Carregamento inicial ──────────────────────────────────────────
 
@@ -83,9 +105,13 @@ export const QuickMeasurementForm: React.FC = () => {
         setIsLoading(true);
         setLoadError(null);
 
-        const locationsData = await inspectionService.loadLocations();
+        const [locationsData, responsiblesData] = await Promise.all([
+          inspectionService.loadLocations(),
+          inspectionService.loadResponsaveis(),
+        ]);
 
         setLocations(locationsData);
+        setResponsiblesList(responsiblesData);
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
         setLoadError('Não foi possível carregar os dados necessários.');
@@ -123,6 +149,12 @@ export const QuickMeasurementForm: React.FC = () => {
     return locations.filter((l) => l.sede === sede);
   }, [locations, sede]);
 
+  const filteredResponsibles = React.useMemo(() => {
+    if (!supervision) return responsiblesList;
+    const bySup = responsiblesList.filter((r) => r.supervisao === supervision);
+    return bySup.length > 0 ? bySup : responsiblesList;
+  }, [responsiblesList, supervision]);
+
   // ── Dados derivados do local selecionado ──────────────────────────
 
   const selectedLocation = React.useMemo(
@@ -134,10 +166,37 @@ export const QuickMeasurementForm: React.FC = () => {
   const locationRule = locationType ? LOCATION_RULES[locationType] : undefined;
   const maxFiles = locationRule ? locationRule.banks : 1;
 
-  // ── Handlers de reset em cascata ──────────────────────────────────
+  // ── Handlers de reset e retorno ──────────────────────────────────
+
+  const handleResetForm = (): void => {
+    setSupervision('');
+    setSede('');
+    setSedeId(0);
+    setSelectedLocationId(0);
+    setMeasurementDate('');
+    setSelectedResponsibles([]);
+    setSelectedResponsibleIds([]);
+    setIsResponsiblesOpen(false);
+    setTemperature('');
+    setTotalVoltage('');
+    setParsedBatteries([]);
+    setUploadedFiles([]);
+    setInputMode('upload');
+    setManualRows([]);
+    setDragOver(false);
+    setParseError(null);
+    setSaveSuccess(false);
+    setSaveError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSupervisionChange = (value: string): void => {
     setSupervision(value);
+    setSelectedResponsibles([]);
+    setSelectedResponsibleIds([]);
+    setIsResponsiblesOpen(false);
     setSede('');
     setSedeId(0);
     setSelectedLocationId(0);
@@ -145,6 +204,17 @@ export const QuickMeasurementForm: React.FC = () => {
     setUploadedFiles([]);
     setManualRows([]);
     setParseError(null);
+  };
+
+  const handleToggleResponsible = (resp: Responsibles): void => {
+    const exists = selectedResponsibleIds.indexOf(resp.id) !== -1;
+    if (exists) {
+      setSelectedResponsibleIds((prev) => prev.filter((id) => id !== resp.id));
+      setSelectedResponsibles((prev) => prev.filter((name) => name !== resp.title));
+    } else {
+      setSelectedResponsibleIds((prev) => [...prev, resp.id]);
+      setSelectedResponsibles((prev) => [...prev, resp.title]);
+    }
   };
 
   const handleSedeChange = (value: string): void => {
@@ -288,9 +358,9 @@ export const QuickMeasurementForm: React.FC = () => {
 
       if (isNaN(resistance) || isNaN(voltage)) continue;
 
-      const voltageStatus = InspectionService.calculateVoltageStatus(voltage);
+      const voltageStatus = InspectionService.calculateVoltageStatus(voltage, locationType);
       const resistanceStatus =
-        InspectionService.calculateResistanceStatus(resistance);
+        InspectionService.calculateResistanceStatus(resistance, locationType);
       const overallStatus = InspectionService.calculateOverallStatus(
         voltageStatus,
         resistanceStatus
@@ -310,7 +380,7 @@ export const QuickMeasurementForm: React.FC = () => {
     }
 
     return result;
-  }, [manualRows]);
+  }, [manualRows, locationType]);
 
   // Sincronizar manualRows → parsedBatteries quando muda
   React.useEffect(() => {
@@ -352,7 +422,8 @@ export const QuickMeasurementForm: React.FC = () => {
         const arrayBuffer = e.target?.result as ArrayBuffer;
         const batteries = InspectionService.parseExcelFile(
           arrayBuffer,
-          file.name
+          file.name,
+          locationType
         );
 
         if (batteries.length === 0) {
@@ -425,10 +496,11 @@ export const QuickMeasurementForm: React.FC = () => {
   React.useEffect(() => {
     const bank1Batteries = parsedBatteries.filter((b) => b.bankNumber === 1);
     if (bank1Batteries.length > 0) {
-      const sum = bank1Batteries.reduce((acc, b) => acc + b.voltage, 0);
-      setTotalVoltage(sum.toFixed(2));
+      // Soma (série) ou média (paralelo: ARM, CV, PN, HBD)
+      const total = calculateTotalVoltage(bank1Batteries.map((b) => b.voltage), locationType);
+      setTotalVoltage(total.toFixed(2));
     }
-  }, [parsedBatteries]);
+  }, [parsedBatteries, locationType]);
 
   // ── Validação e Salvamento ────────────────────────────────────────
 
@@ -447,6 +519,10 @@ export const QuickMeasurementForm: React.FC = () => {
     }
     if (!measurementDate) {
       alert('Informe a data da medição.');
+      return;
+    }
+    if (selectedResponsibleIds.length === 0) {
+      alert('Selecione pelo menos um responsável pela medição.');
       return;
     }
     if (parsedBatteries.length === 0) {
@@ -478,6 +554,8 @@ export const QuickMeasurementForm: React.FC = () => {
       kmId: loc.id,
       locationId: loc.id,
       measurementDate,
+      responsibles: selectedResponsibles,
+      responsibleIds: selectedResponsibleIds,
       ambientTemperature: temperature,
       totalFloatVoltage: totalVoltage,
       parsedBatteries,
@@ -623,6 +701,10 @@ export const QuickMeasurementForm: React.FC = () => {
                   {measurementDate}
                 </p>
                 <p>
+                  <strong>Responsáveis:</strong>{' '}
+                  {selectedResponsibles.join(', ')}
+                </p>
+                <p>
                   <strong>Baterias registradas:</strong>{' '}
                   {parsedBatteries.length}
                 </p>
@@ -634,6 +716,31 @@ export const QuickMeasurementForm: React.FC = () => {
                   <strong>Modo de entrada:</strong>{' '}
                   {inputMode === 'upload' ? 'Upload do analisador' : 'Entrada manual'}
                 </p>
+              </div>
+
+              <div className={styles.successActions}>
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
+                  onClick={handleResetForm}
+                >
+                  ← Voltar para o Cadastro
+                </button>
+                {navigation && (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    onClick={() =>
+                      navigation.navigateTo({
+                        page: 'procedure',
+                        areaId: 'energia',
+                        procedureId: 'manutencao-baterias',
+                      })
+                    }
+                  >
+                    Voltar ao Procedimento
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -750,6 +857,104 @@ export const QuickMeasurementForm: React.FC = () => {
               Dados da Medição
             </h2>
             <div className={styles.formGrid}>
+              <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                <label>Responsáveis</label>
+                <div className={styles.multiSelectWrapper} ref={responsiblesDropdownRef}>
+                  <button
+                    type="button"
+                    id="qm-responsibles"
+                    className={[
+                      styles.multiSelectTrigger,
+                      isResponsiblesOpen ? styles.multiSelectTriggerOpen : '',
+                      !supervision ? styles.multiSelectTriggerDisabled : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => {
+                      if (supervision) {
+                        setIsResponsiblesOpen((prev) => !prev);
+                      }
+                    }}
+                    disabled={!supervision}
+                  >
+                    {selectedResponsibles.length === 0 ? (
+                      <span className={styles.multiSelectPlaceholder}>
+                        {!supervision
+                          ? 'Selecione a supervisão primeiro...'
+                          : 'Clique para selecionar os responsáveis...'}
+                      </span>
+                    ) : (
+                      <div className={styles.multiSelectChips}>
+                        {selectedResponsibles.map((name) => {
+                          const respObj = filteredResponsibles.find((r) => r.title === name);
+                          return (
+                            <span key={name} className={styles.multiSelectChip}>
+                              {name}
+                              {respObj && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className={styles.multiSelectChipRemove}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleResponsible(respObj);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.stopPropagation();
+                                      handleToggleResponsible(respObj);
+                                    }
+                                  }}
+                                  title={`Remover ${name}`}
+                                >
+                                  ✕
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <span
+                      className={`${styles.multiSelectChevron} ${
+                        isResponsiblesOpen ? styles.multiSelectChevronOpen : ''
+                      }`}
+                    >
+                      ▼
+                    </span>
+                  </button>
+
+                  {isResponsiblesOpen && supervision && (
+                    <div className={styles.multiSelectDropdown}>
+                      {filteredResponsibles.length === 0 ? (
+                        <div className={styles.multiSelectEmpty}>
+                          Nenhum responsável encontrado.
+                        </div>
+                      ) : (
+                        filteredResponsibles.map((r) => {
+                          const isChecked = selectedResponsibleIds.indexOf(r.id) !== -1;
+                          return (
+                            <label
+                              key={r.id}
+                              className={`${styles.multiSelectOption} ${
+                                isChecked ? styles.multiSelectOptionSelected : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className={styles.multiSelectCheckbox}
+                                checked={isChecked}
+                                onChange={() => handleToggleResponsible(r)}
+                              />
+                              <span>{r.title}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className={styles.formGroup}>
                 <label htmlFor="qm-date">
                   Data da Medição
@@ -1050,8 +1255,8 @@ export const QuickMeasurementForm: React.FC = () => {
                                 let statusColor = '#CBD5E1';
                                 let statusLabel = '—';
                                 if (hasValues) {
-                                  const vStatus = InspectionService.calculateVoltageStatus(voltage);
-                                  const rStatus = InspectionService.calculateResistanceStatus(resistance);
+                                  const vStatus = InspectionService.calculateVoltageStatus(voltage, locationType);
+                                  const rStatus = InspectionService.calculateResistanceStatus(resistance, locationType);
                                   const overall = InspectionService.calculateOverallStatus(vStatus, rStatus);
                                   statusColor = STATUS_COLORS[overall] || '#CBD5E1';
                                   statusLabel = overall;

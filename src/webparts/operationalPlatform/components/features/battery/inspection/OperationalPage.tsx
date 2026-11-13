@@ -5,7 +5,7 @@ import {
   IParsedBatteryData,
 } from '../../../../../../models/BatteryInspection';
 import { InspectionService } from '../../../../../../services/InspectionService';
-import { LOCATION_RULES } from '../../../../../../constants/DashboardConstants';
+import { LOCATION_RULES, calculateTotalVoltage } from '../../../../../../constants/DashboardConstants';
 
 export interface IOperationalPageProps {
   data: IWizardFormData;
@@ -76,7 +76,8 @@ export const OperationalPage: React.FC<IOperationalPageProps> = ({
         const arrayBuffer = e.target?.result as ArrayBuffer;
         const batteries = InspectionService.parseExcelFile(
           arrayBuffer,
-          file.name
+          file.name,
+          locationType
         );
 
         if (batteries.length === 0) {
@@ -147,14 +148,15 @@ export const OperationalPage: React.FC<IOperationalPageProps> = ({
 
   // ── Coleta e navegação ──────────────────────────────────────────
 
-  // Auto-cálculo da Tensão Total: soma das tensões do Banco 1
+  // Auto-cálculo da Tensão Total do Banco 1:
+  // soma (série) ou média (paralelo: ARM, CV, PN, HBD)
   React.useEffect(() => {
     const bank1Batteries = parsedBatteries.filter((b) => b.bankNumber === 1);
     if (bank1Batteries.length > 0) {
-      const sum = bank1Batteries.reduce((acc, b) => acc + b.voltage, 0);
-      setTotalVoltage(sum.toFixed(2));
+      const total = calculateTotalVoltage(bank1Batteries.map((b) => b.voltage), locationType);
+      setTotalVoltage(total.toFixed(2));
     }
-  }, [parsedBatteries]);
+  }, [parsedBatteries, locationType]);
 
   const getPageData = (): Partial<IWizardFormData> => ({
     parsedBatteries,
