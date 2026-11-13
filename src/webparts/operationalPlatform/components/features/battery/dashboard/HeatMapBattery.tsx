@@ -70,7 +70,9 @@ export const HeatMapBattery: React.FC<IHeatMapBatteryProps> = ({
                       key={r.battery.id}
                       content={
                         <div style={{ padding: 4 }}>
-                          <p style={{ fontWeight: 700, color }}>{r.battery.serialNumber}</p>
+                          <p style={{ fontWeight: 700, color }}>
+                            NO {r.battery.sequenceNumber} — {r.battery.serialNumber}
+                          </p>
                           <p>Tensão: {r.voltage} V</p>
                           <p>Resistência: {r.resistance} Ω</p>
                           <p>Status: {getStatusLabel(r.status)}</p>

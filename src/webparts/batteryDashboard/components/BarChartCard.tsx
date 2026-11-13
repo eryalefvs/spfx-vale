@@ -3,7 +3,7 @@ import * as React from 'react';
 import styles from './BatteryDashboard.module.scss';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, Cell,
+  CartesianGrid, Tooltip, Cell, LabelList,
 } from 'recharts';
 
 export interface IBarChartCardProps {
@@ -26,7 +26,35 @@ export const BarChartCard: React.FC<IBarChartCardProps> = ({
 
   const margin = isVertical
     ? { top: 0, right: 16, left: 10, bottom: 0 }
-    : { top: 4, right: 4, left: -20, bottom: 0 };
+    : { top: 32, right: 20, left: -20, bottom: 0 };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderDiagonalLabel = (props: any): React.ReactElement | null => {
+    const { x, y, width, value } = props;
+    if (value === undefined || value === null || x === undefined || y === undefined || width === undefined) {
+      return null;
+    }
+    const numVal = typeof value === 'number' ? value : parseFloat(String(value));
+    const formatted = Number.isFinite(numVal)
+      ? `${numVal.toFixed(2)}${unit.trim()}`
+      : String(value);
+    const cx = Number(x) + Number(width) / 2;
+    const cy = Number(y) - 6;
+
+    return (
+      <text
+        x={cx}
+        y={cy}
+        fill="var(--text-secondary, #475569)"
+        fontSize={9}
+        fontWeight={600}
+        textAnchor="start"
+        transform={`rotate(-45, ${cx}, ${cy})`}
+      >
+        {formatted}
+      </text>
+    );
+  };
 
   return (
     <div className={styles.card}>
@@ -75,6 +103,9 @@ export const BarChartCard: React.FC<IBarChartCardProps> = ({
               }}
             />
             <Bar dataKey={dataKey} radius={isVertical ? [0, 4, 4, 0] : [4, 4, 0, 0]}>
+              {!isVertical && (
+                <LabelList dataKey={dataKey} content={renderDiagonalLabel} />
+              )}
               {data.map((entry, index) => (
                 <Cell key={'cell-' + index} fill={(entry as Record<string, string>).fill || color} />
               ))}

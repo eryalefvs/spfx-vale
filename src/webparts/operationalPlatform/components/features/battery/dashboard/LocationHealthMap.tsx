@@ -30,6 +30,11 @@ interface LocationHealthData {
   disabledBankNumbers: number[];
 }
 
+interface SedeHealthGroup {
+  sede: string;
+  items: LocationHealthData[];
+}
+
 /**
  * Retorna uma cor interpolada entre verde (#22C55E) e vermelho (#DC2626)
  * baseada em um ratio de 0 (100% saudável) a 1 (100% problemático).
@@ -136,6 +141,32 @@ export const LocationHealthMap: React.FC<ILocationHealthMapProps> = ({
     }
   }, [onSelectLocation]);
 
+  // Agrupar por sede (mantendo a ordenação geográfica por KM)
+  const sedesGrouped = React.useMemo<SedeHealthGroup[]>(() => {
+    const groupMap: Record<string, LocationHealthData[]> = {};
+    const sedeOrder: string[] = [];
+
+    locationHealthData.forEach((item) => {
+      const sede = item.location.sede?.trim() || 'Sem Sede';
+      if (!groupMap[sede]) {
+        groupMap[sede] = [];
+        sedeOrder.push(sede);
+      }
+      groupMap[sede].push(item);
+    });
+
+    return sedeOrder
+      .sort((a, b) => {
+        const minKmA = groupMap[a][0]?.location.km ?? 0;
+        const minKmB = groupMap[b][0]?.location.km ?? 0;
+        return minKmA - minKmB;
+      })
+      .map((sede) => ({
+        sede,
+        items: groupMap[sede],
+      }));
+  }, [locationHealthData]);
+
   if (locationHealthData.length === 0) return null;
 
   return (
@@ -143,115 +174,128 @@ export const LocationHealthMap: React.FC<ILocationHealthMapProps> = ({
       <div className={styles.cardHeader}>
         <p className={styles.cardTitle}>Mapa de Saúde dos Locais</p>
         <p className={styles.cardSubtitle}>
-          Locais ordenados por KM — clique para filtrar o dashboard
+          Locais divididos por sede e ordenados por KM — clique em um local para filtrar o dashboard
         </p>
       </div>
 
       <div className={styles.cardBody}>
-        <div className={styles.locationHealthMap}>
-          {locationHealthData.map((data, index) => {
-            const bgColor = data.hasMeasurements ? getGradientColor(data.problemRatio) : '#E2E8F0';
-            const textColor = data.hasMeasurements ? getContrastTextColor(data.problemRatio) : '#94A3B8';
-            const isLast = index === locationHealthData.length - 1;
-            const isSelected = selectedLocationId === data.location.id;
+        {sedesGrouped.map((group) => (
+          <div key={group.sede} className={styles.sedeHealthGroup}>
+            <div className={styles.sedeHealthHeader}>
+              <span className={styles.sedeHealthTitle}>
+                🏢 {group.sede}
+              </span>
+              <span className={styles.sedeHealthCount}>
+                {group.items.length} {group.items.length === 1 ? 'local' : 'locais'}
+              </span>
+            </div>
 
-            return (
-              <React.Fragment key={data.location.id}>
-                <TooltipHost
-                  content={
-                    <div style={{ padding: 6 }}>
-                      <p style={{ fontWeight: 700, marginBottom: 4, fontSize: '0.875rem' }}>
-                        {data.location.localKm}
-                      </p>
-                      <p style={{ margin: 0 }}>
-                        Tipo: <strong>{data.location.locationType}</strong>
-                      </p>
-                      <p style={{ margin: 0 }}>
-                        KM: <strong>{data.location.km}</strong>
-                      </p>
-                      <p style={{ margin: 0 }}>
-                        Sede: <strong>{data.location.sede}</strong> | Supervisão: <strong>{data.location.supervisao}</strong>
-                      </p>
-                      <hr style={{ margin: '6px 0', borderColor: '#E2E8F0' }} />
-                      <p style={{ margin: 0 }}>
-                        Total: <strong>{data.totalBatteries}</strong> baterias
-                      </p>
-                      {!data.hasMeasurements && (
-                        <p style={{ margin: 0, color: '#64748B', fontStyle: 'italic' }}>
-                          Sem medições registradas
-                        </p>
-                      )}
-                      <p style={{ margin: 0, color: '#22C55E' }}>
-                        Excelente: <strong>{data.excellentCount}</strong>
-                      </p>
-                      <p style={{ margin: 0, color: '#F97316' }}>
-                        Alerta: <strong>{data.alertCount}</strong>
-                      </p>
-                      <p style={{ margin: 0, color: '#DC2626' }}>
-                        Crítico: <strong>{data.criticalCount}</strong>
-                      </p>
-                      {data.hasDisabledBank && (
-                        <>
+            <div className={styles.locationHealthMap}>
+              {group.items.map((data, index) => {
+                const bgColor = data.hasMeasurements ? getGradientColor(data.problemRatio) : '#E2E8F0';
+                const textColor = data.hasMeasurements ? getContrastTextColor(data.problemRatio) : '#94A3B8';
+                const isLast = index === group.items.length - 1;
+                const isSelected = selectedLocationId === data.location.id;
+
+                return (
+                  <React.Fragment key={data.location.id}>
+                    <TooltipHost
+                      content={
+                        <div style={{ padding: 6 }}>
+                          <p style={{ fontWeight: 700, marginBottom: 4, fontSize: '0.875rem' }}>
+                            {data.location.localKm}
+                          </p>
+                          <p style={{ margin: 0 }}>
+                            Tipo: <strong>{data.location.locationType}</strong>
+                          </p>
+                          <p style={{ margin: 0 }}>
+                            KM: <strong>{data.location.km}</strong>
+                          </p>
+                          <p style={{ margin: 0 }}>
+                            Sede: <strong>{data.location.sede}</strong> | Supervisão: <strong>{data.location.supervisao}</strong>
+                          </p>
                           <hr style={{ margin: '6px 0', borderColor: '#E2E8F0' }} />
-                          <p style={{ margin: 0, color: '#F59E0B', fontWeight: 600 }}>
-                            ⚠ Banco {data.disabledBankNumbers.join(', ')} desabilitado
+                          <p style={{ margin: 0 }}>
+                            Total: <strong>{data.totalBatteries}</strong> baterias
                           </p>
-                          <p style={{ margin: 0, fontSize: '0.72rem', color: '#92400E' }}>
-                            Sem baterias ativas neste banco
+                          {!data.hasMeasurements && (
+                            <p style={{ margin: 0, color: '#64748B', fontStyle: 'italic' }}>
+                              Sem medições registradas
+                            </p>
+                          )}
+                          <p style={{ margin: 0, color: '#22C55E' }}>
+                            Excelente: <strong>{data.excellentCount}</strong>
                           </p>
-                        </>
-                      )}
-                      <hr style={{ margin: '6px 0', borderColor: '#E2E8F0' }} />
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>
-                        Clique para filtrar por este local
-                      </p>
-                    </div>
-                  }
-                >
-                  <div
-                    className={`${styles.locationHealthCard} ${isSelected ? styles['locationHealthCardSelected'] : ''}`}
-                    style={{
-                      backgroundColor: bgColor,
-                      color: textColor,
-                      cursor: onSelectLocation ? 'pointer' : 'default',
-                      ...(!data.hasMeasurements ? { opacity: 0.75 } : {}),
-                      ...(data.hasDisabledBank ? {
-                        border: '2px dashed #F59E0B',
-                        boxShadow: '0 0 0 1px rgba(245, 158, 11, 0.3)',
-                      } : {}),
-                    }}
-                    onClick={() => handleCardClick(data.location.id)}
-                  >
-                    {data.hasDisabledBank && (
-                      <span style={{
-                        position: 'absolute',
-                        top: -6,
-                        right: -6,
-                        fontSize: '0.7rem',
-                        lineHeight: 1,
-                        zIndex: 1,
-                      }}>⚠️</span>
+                          <p style={{ margin: 0, color: '#F97316' }}>
+                            Alerta: <strong>{data.alertCount}</strong>
+                          </p>
+                          <p style={{ margin: 0, color: '#DC2626' }}>
+                            Crítico: <strong>{data.criticalCount}</strong>
+                          </p>
+                          {data.hasDisabledBank && (
+                            <>
+                              <hr style={{ margin: '6px 0', borderColor: '#E2E8F0' }} />
+                              <p style={{ margin: 0, color: '#F59E0B', fontWeight: 600 }}>
+                                ⚠ Banco {data.disabledBankNumbers.join(', ')} desabilitado
+                              </p>
+                              <p style={{ margin: 0, fontSize: '0.72rem', color: '#92400E' }}>
+                                Sem baterias ativas neste banco
+                              </p>
+                            </>
+                          )}
+                          <hr style={{ margin: '6px 0', borderColor: '#E2E8F0' }} />
+                          <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>
+                            Clique para filtrar por este local
+                          </p>
+                        </div>
+                      }
+                    >
+                      <div
+                        className={`${styles.locationHealthCard} ${isSelected ? styles['locationHealthCardSelected'] : ''}`}
+                        style={{
+                          backgroundColor: bgColor,
+                          color: textColor,
+                          cursor: onSelectLocation ? 'pointer' : 'default',
+                          ...(!data.hasMeasurements ? { opacity: 0.75 } : {}),
+                          ...(data.hasDisabledBank ? {
+                            border: '2px dashed #F59E0B',
+                            boxShadow: '0 0 0 1px rgba(245, 158, 11, 0.3)',
+                          } : {}),
+                        }}
+                        onClick={() => handleCardClick(data.location.id)}
+                      >
+                        {data.hasDisabledBank && (
+                          <span style={{
+                            position: 'absolute',
+                            top: -6,
+                            right: -6,
+                            fontSize: '0.7rem',
+                            lineHeight: 1,
+                            zIndex: 1,
+                          }}>⚠️</span>
+                        )}
+                        <span className={styles.locationHealthKm}>
+                          KM {data.location.km}
+                        </span>
+                        <span className={styles.locationHealthType}>
+                          {data.location.locationType}
+                        </span>
+                        {(data.alertCount + data.criticalCount) > 0 && (
+                          <span className={styles.locationHealthBadge}>
+                            {data.alertCount + data.criticalCount}
+                          </span>
+                        )}
+                      </div>
+                    </TooltipHost>
+                    {!isLast && (
+                      <div className={styles.locationHealthConnector} />
                     )}
-                    <span className={styles.locationHealthKm}>
-                      KM {data.location.km}
-                    </span>
-                    <span className={styles.locationHealthType}>
-                      {data.location.locationType}
-                    </span>
-                    {(data.alertCount + data.criticalCount) > 0 && (
-                      <span className={styles.locationHealthBadge}>
-                        {data.alertCount + data.criticalCount}
-                      </span>
-                    )}
-                  </div>
-                </TooltipHost>
-                {!isLast && (
-                  <div className={styles.locationHealthConnector} />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        ))}
 
         {/* Legenda */}
         <div className={styles.locationHealthLegend}>

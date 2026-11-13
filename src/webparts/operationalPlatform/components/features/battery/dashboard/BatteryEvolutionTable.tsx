@@ -4,7 +4,7 @@ import styles from './BatteryDashboard.module.scss';
 import { Battery, Measurement, Activity } from '../../../../../../models/DashboardModels';
 import { getBatteryEvolution, BatteryEvolutionRow, getUniqueBankNumbers } from '../../../../../../utils/dashboardUtils';
 import { Icon } from '@fluentui/react/lib/Icon';
-import { RESISTANCE_THRESHOLDS, VOLTAGE_THRESHOLDS } from '../../../../../../constants/DashboardConstants';
+import { getHealthThresholds } from '../../../../../../constants/DashboardConstants';
 
 export interface IBatteryEvolutionTableProps {
   batteries: Battery[];
@@ -41,14 +41,15 @@ function getDeltaIndicator(current: number, previous: number, metric: MetricType
 }
 
 /** Retorna cor de fundo baseada no valor e limites */
-function getCellBgColor(value: number, metric: MetricType): string {
+function getCellBgColor(value: number, metric: MetricType, locationType?: string): string {
+  const t = getHealthThresholds(locationType);
   if (metric === 'resistance') {
-    if (value <= RESISTANCE_THRESHOLDS.excellentMax) return 'var(--success-light)';
-    if (value <= RESISTANCE_THRESHOLDS.alertMax) return 'var(--warning-light)';
+    if (value <= t.resistance.excellentMax) return 'var(--success-light)';
+    if (value <= t.resistance.alertMax) return 'var(--warning-light)';
     return 'var(--danger-light)';
   } else {
-    if (value >= VOLTAGE_THRESHOLDS.excellentMin && value <= VOLTAGE_THRESHOLDS.maxAcceptable) return 'var(--success-light)';
-    if (value >= VOLTAGE_THRESHOLDS.alertMin) return 'var(--warning-light)';
+    if (value >= t.voltage.excellentMin && value <= t.voltage.maxAcceptable) return 'var(--success-light)';
+    if (value >= t.voltage.alertMin) return 'var(--warning-light)';
     return 'var(--danger-light)';
   }
 }
@@ -161,6 +162,7 @@ export const BatteryEvolutionTable: React.FC<IBatteryEvolutionTableProps> = ({
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>NO</th>
               <th>Bateria</th>
               <th>Banco</th>
               {evolution.dates.map((d) => (
@@ -183,6 +185,7 @@ export const BatteryEvolutionTable: React.FC<IBatteryEvolutionTableProps> = ({
                   style={{ cursor: 'pointer' }}
                   onClick={() => onSelectBattery(row.batteryId)}
                 >
+                  <td style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--accent)' }}>{row.sequenceNumber}</td>
                   <td style={{ fontWeight: 600, fontSize: '0.75rem' }}>{row.serialNumber}</td>
                   <td style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>B{row.bankNumber}</td>
                   {evolution.dates.map((date, colIdx) => {
@@ -192,7 +195,7 @@ export const BatteryEvolutionTable: React.FC<IBatteryEvolutionTableProps> = ({
                     }
 
                     const value = metric === 'resistance' ? entry.resistance : entry.voltage;
-                    const bgColor = getCellBgColor(value, metric);
+                    const bgColor = getCellBgColor(value, metric, row.locationType);
 
                     // Calcular delta visual vs anterior
                     let indicator = { arrow: '', color: 'var(--text-muted)' };

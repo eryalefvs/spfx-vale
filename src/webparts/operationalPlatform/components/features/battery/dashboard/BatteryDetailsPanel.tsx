@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import { Battery, Measurement, Location, Activity, TrendPoint } from '../../../../../../models/DashboardModels';
 import { getBatteryTrend, formatDate, parseStatus, getStatusColor, getStatusLabel } from '../../../../../../utils/dashboardUtils';
-import { VOLTAGE_THRESHOLDS, RESISTANCE_THRESHOLDS } from '../../../../../../constants/DashboardConstants';
+import { getHealthThresholds } from '../../../../../../constants/DashboardConstants';
 import {
   ResponsiveContainer,
   LineChart,
@@ -28,6 +28,7 @@ export const BatteryDetailsPanel: React.FC<IBatteryDetailsPanelProps> = ({
   id, batteries, measurements, locations, activities, onClose,
 }) => {
   const battery = batteries.find((b) => b.id === id);
+  const thresholds = getHealthThresholds(battery?.locationType);
   if (!battery) return null;
 
   const location = locations.find((l) => l.id === battery.locationId);
@@ -80,13 +81,13 @@ export const BatteryDetailsPanel: React.FC<IBatteryDetailsPanelProps> = ({
   }, [measurements, id, activities]);
 
   const voltageTrend = React.useMemo(
-    () => getBatteryTrend(measurements, id, activities),
-    [measurements, id]
+    () => getBatteryTrend(measurements, id, activities, (m) => m.voltage),
+    [measurements, id, activities]
   );
 
   const resistanceTrend = React.useMemo(
-    () => getBatteryTrend(measurements, id, activities),
-    [measurements, id]
+    () => getBatteryTrend(measurements, id, activities, (m) => m.resistance),
+    [measurements, id, activities]
   );
 
   const lastMeasurement = batteryMeasurements.length > 0
@@ -200,7 +201,7 @@ export const BatteryDetailsPanel: React.FC<IBatteryDetailsPanelProps> = ({
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0F172A', marginBottom: 8 }}>
               Evolução da Tensão
             </p>
-            {renderMiniChart(voltageTrend, '#2563EB', VOLTAGE_THRESHOLDS.ideal)}
+            {renderMiniChart(voltageTrend, '#2563EB', thresholds.voltage.ideal)}
           </div>
         )}
 
@@ -209,7 +210,7 @@ export const BatteryDetailsPanel: React.FC<IBatteryDetailsPanelProps> = ({
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#0F172A', marginBottom: 8 }}>
               Evolução da Resistência
             </p>
-            {renderMiniChart(resistanceTrend, '#F97316', RESISTANCE_THRESHOLDS.ideal)}
+            {renderMiniChart(resistanceTrend, '#F97316', thresholds.resistance.ideal)}
           </div>
         )}
 

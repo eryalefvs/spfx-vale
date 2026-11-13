@@ -1,35 +1,83 @@
-// ActivityHistoryTable.tsx — Tabela de histórico de atividades com accordion de medições
+// ActivityHistoryTable.tsx — Tabela de histórico de atividades com accordion de medições e filtros
 import * as React from 'react';
 import styles from './BatteryDashboard.module.scss';
-import { Measurement, Battery, Activity } from '../../../../../../models/DashboardModels';
+import { Measurement, Battery, Activity, Location } from '../../../../../../models/DashboardModels';
 import { formatDate, parseStatus, getStatusColor } from '../../../../../../utils/dashboardUtils';
+import { downloadActivityPdf } from '../../../../../../utils/activityPdfGenerator';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { IconButton } from '@fluentui/react/lib/Button';
 import { SearchBox } from '@fluentui/react/lib/SearchBox';
+import { Dropdown, IDropdownOption } from '@fluentui/react/lib/Dropdown';
 import { TABLE_CONFIG } from '../../../../../../constants/DashboardConstants';
+import { useDashboard } from '../../../../../../contexts/DashboardContext';
+import { LoadingOverlay } from './LoadingOverlay';
+import { ErrorState } from './ErrorState';
+import { BatteryDetailsPanel } from './BatteryDetailsPanel';
 
 export interface IActivityHistoryTableProps {
   measurements: Measurement[];
   batteries: Battery[];
   activities: Activity[];
+  locations?: Location[];
   onSelectBattery: (id: number) => void;
 }
 
 interface EnrichedActivity extends Activity {
   measurements: Array<Measurement & { battery?: Battery }>;
+  locationBatteries: Battery[];
+  locationId?: number;
+  resolvedSede: string;
+  resolvedKm: string;
+  resolvedLocationType: string;
+  localKm: string;
 }
 
 export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
-  measurements, batteries, activities, onSelectBattery,
+  measurements, batteries, activities, locations = [], onSelectBattery,
 }) => {
   const [page, setPage] = React.useState(0);
   const [searchText, setSearchText] = React.useState('');
+  const [selectedSede, setSelectedSede] = React.useState<string | undefined>(undefined);
+  const [selectedLocationId, setSelectedLocationId] = React.useState<number | undefined>(undefined);
   const [expandedIds, setExpandedIds] = React.useState<Set<number>>(new Set());
   const pageSize = TABLE_CONFIG.defaultPageSize;
 
-  // Enriquecer atividades com suas medições
+  // Mapa rápido de Location por ID
+  const locationMap = React.useMemo(() => {
+    const map: Record<number, Location> = {};
+    for (const loc of locations) {
+      map[loc.id] = loc;
+    }
+    return map;
+  }, [locations]);
+
+  // Opções de filtro: Sedes
+  const sedeOptions = React.useMemo<IDropdownOption[]>(() => {
+    const uniqueSedes = Array.from(
+      new Set(locations.map((l) => l.sede).filter(Boolean))
+    ).sort();
+    return [
+      { key: '', text: 'Todas' },
+      ...uniqueSedes.map((s) => ({ key: s, text: s })),
+    ];
+  }, [locations]);
+
+  // Opções de filtro: Local de Instalação (filtrado pela Sede selecionada)
+  const locationOptions = React.useMemo<IDropdownOption[]>(() => {
+    const filteredLocs = selectedSede
+      ? locations.filter((l) => l.sede === selectedSede)
+      : locations;
+    return [
+      { key: '', text: 'Todos' },
+      ...filteredLocs.map((l) => ({
+        key: l.id,
+        text: l.localKm || `${l.locationType} - KM ${l.km}`,
+      })),
+    ];
+  }, [locations, selectedSede]);
+
+  // Enriquecer atividades com suas medições e dados de local
   const enrichedActivities = React.useMemo<EnrichedActivity[]>(() => {
-    // Mapa de activityId → medições
     const measurementsByActivity: Record<number, Array<Measurement & { battery?: Battery }>> = {};
     for (const m of measurements) {
       if (!m.activityId) continue;
@@ -40,30 +88,60 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
 
     return activities
       .filter((a) => measurementsByActivity[a.id] && measurementsByActivity[a.id].length > 0)
-      .map((a) => ({
-        ...a,
-        measurements: (measurementsByActivity[a.id] || [])
-          .sort((x, y) => {
-            const bx = x.battery;
-            const by = y.battery;
-            if (bx && by) return bx.bankNumber - by.bankNumber || bx.sequenceNumber - by.sequenceNumber;
-            return 0;
-          }),
-      }))
-      .sort((a, b) => b.activityDate.getTime() - a.activityDate.getTime());
-  }, [measurements, batteries, activities]);
+      .map((a) => {
+        const actMeasurements = (measurementsByActivity[a.id] || []).sort((x, y) => {
+          const bx = x.battery;
+          const by = y.battery;
+          if (bx && by) return bx.bankNumber - by.bankNumber || bx.sequenceNumber - by.sequenceNumber;
+          return 0;
+        });
 
-  // Filtro por texto
+        const firstBatWithLoc = actMeasurements.find((m) => m.battery?.locationId !== undefined)?.battery;
+        const locId = firstBatWithLoc?.locationId ?? a.locationId;
+        const loc = locId !== undefined ? locationMap[locId] : undefined;
+
+        const locationBatteries = locId !== undefined
+          ? batteries
+              .filter((b) => b.locationId === locId)
+              .sort((x, y) => x.bankNumber - y.bankNumber || x.sequenceNumber - y.sequenceNumber)
+          : actMeasurements
+              .map((m) => m.battery)
+              .filter((b): b is Battery => b !== undefined);
+
+        return {
+          ...a,
+          measurements: actMeasurements,
+          locationBatteries,
+          locationId: locId,
+          resolvedSede: loc?.sede || a.sede || '',
+          resolvedKm: a.km || (loc ? String(loc.km) : ''),
+          resolvedLocationType: a.locationType || loc?.locationType || '',
+          localKm: loc?.localKm || '',
+        };
+      })
+      .sort((a, b) => b.activityDate.getTime() - a.activityDate.getTime());
+  }, [measurements, batteries, activities, locationMap]);
+
+  // Filtro por Sede, Local de Instalação e busca textual
   const filtered = React.useMemo(() => {
-    if (!searchText) return enrichedActivities;
-    const q = searchText.toLowerCase();
-    return enrichedActivities.filter((a) =>
-      a.maintenanceOrder.toLowerCase().includes(q) ||
-      a.locationType.toLowerCase().includes(q) ||
-      a.km.toLowerCase().includes(q) ||
-      a.responsibles.some((r) => r.toLowerCase().includes(q))
-    );
-  }, [enrichedActivities, searchText]);
+    return enrichedActivities.filter((a) => {
+      if (selectedSede && a.resolvedSede !== selectedSede) return false;
+      if (selectedLocationId !== undefined && a.locationId !== selectedLocationId) return false;
+
+      if (searchText) {
+        const q = searchText.toLowerCase();
+        const matchesText =
+          a.maintenanceOrder.toLowerCase().includes(q) ||
+          a.resolvedLocationType.toLowerCase().includes(q) ||
+          a.resolvedKm.toLowerCase().includes(q) ||
+          a.localKm.toLowerCase().includes(q) ||
+          a.responsibles.some((r) => r.toLowerCase().includes(q));
+        if (!matchesText) return false;
+      }
+
+      return true;
+    });
+  }, [enrichedActivities, selectedSede, selectedLocationId, searchText]);
 
   // Paginação
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -78,6 +156,28 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
     });
   }, []);
 
+  const handleSedeChange = React.useCallback((_: unknown, opt?: IDropdownOption) => {
+    const val = opt?.key ? String(opt.key) : undefined;
+    setSelectedSede(val);
+    setSelectedLocationId(undefined);
+    setPage(0);
+  }, []);
+
+  const handleLocationChange = React.useCallback((_: unknown, opt?: IDropdownOption) => {
+    const val = opt?.key ? Number(opt.key) : undefined;
+    setSelectedLocationId(val);
+    setPage(0);
+  }, []);
+
+  const handleClearFilters = React.useCallback(() => {
+    setSelectedSede(undefined);
+    setSelectedLocationId(undefined);
+    setSearchText('');
+    setPage(0);
+  }, []);
+
+  const hasActiveFilters = Boolean(selectedSede || selectedLocationId !== undefined || searchText);
+
   return (
     <div className={styles.chartCard} style={{ gridColumn: '1 / -1' }}>
       {/* Header */}
@@ -86,12 +186,56 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
           <p className={styles.chartCardTitle}>Histórico de Atividades</p>
           <p className={styles.chartCardSubtitle}>{filtered.length} atividades encontradas</p>
         </div>
-        <SearchBox
-          placeholder="Buscar por OM, local, responsável..."
-          value={searchText}
-          onChange={(_, v) => { setSearchText(v || ''); setPage(0); }}
-          styles={{ root: { width: 260, borderRadius: 8 } }}
-        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {/* Filtro de Sedes */}
+          <div className={styles.filterItem}>
+            <span className={styles.filterLabel}>Sedes:</span>
+            <Dropdown
+              placeholder="Todas"
+              selectedKey={selectedSede ?? ''}
+              options={sedeOptions}
+              onChange={handleSedeChange}
+              styles={{
+                root: { minWidth: 130 },
+                dropdown: { width: 130 },
+              }}
+            />
+          </div>
+
+          {/* Filtro de Local de Instalação */}
+          <div className={styles.filterItem}>
+            <span className={styles.filterLabel}>Local de Instalação:</span>
+            <Dropdown
+              placeholder="Todos"
+              selectedKey={selectedLocationId ?? ''}
+              options={locationOptions}
+              onChange={handleLocationChange}
+              styles={{
+                root: { minWidth: 180 },
+                dropdown: { width: 180 },
+              }}
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className={styles.filterClearBtn}
+              onClick={handleClearFilters}
+              title="Limpar filtros"
+            >
+              ✕ Limpar
+            </button>
+          )}
+
+          <SearchBox
+            placeholder="Buscar por OM, local, responsável..."
+            value={searchText}
+            onChange={(_, v) => { setSearchText(v || ''); setPage(0); }}
+            styles={{ root: { width: 240, borderRadius: 8 } }}
+          />
+        </div>
       </div>
 
       {/* Tabela */}
@@ -131,8 +275,8 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
                     </td>
                     <td style={{ fontWeight: 600 }}>{formatDate(act.activityDate)}</td>
                     <td>{act.maintenanceOrder || '-'}</td>
-                    <td>{act.locationType || '-'}</td>
-                    <td>{act.km || '-'}</td>
+                    <td>{act.resolvedLocationType || '-'}</td>
+                    <td>{act.resolvedKm || '-'}</td>
                     <td>{act.responsibles.length > 0 ? act.responsibles.join(', ') : '-'}</td>
                     <td style={{ fontWeight: 600, color: 'var(--accent)' }}>
                       {act.totalVoltage ? act.totalVoltage + ' V' : '-'}
@@ -146,13 +290,15 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
                     <td>
                       <IconButton
                         iconProps={{ iconName: 'PDF' }}
-                        title="Baixar relatório (em breve)"
-                        disabled={true}
+                        title="Baixar relatório em PDF"
                         styles={{
                           root: { width: 28, height: 28 },
-                          icon: { fontSize: 14, color: 'var(--text-muted)' },
+                          icon: { fontSize: 15, color: '#DC2626' },
                         }}
-                        onClick={(e) => { e.stopPropagation(); /* TODO: PDF export */ }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadActivityPdf(act);
+                        }}
                       />
                     </td>
                   </tr>
@@ -238,6 +384,54 @@ export const ActivityHistoryTable: React.FC<IActivityHistoryTableProps> = ({
             />
           </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+export const ActivityRecordsPage: React.FC = () => {
+  const ctx = useDashboard();
+  const [selectedBatteryId, setSelectedBatteryId] = React.useState<number | undefined>(undefined);
+
+  const handleSelectBattery = React.useCallback((id: number) => {
+    setSelectedBatteryId(id);
+  }, []);
+
+  const handleClosePanel = React.useCallback(() => {
+    setSelectedBatteryId(undefined);
+  }, []);
+
+  if (ctx.loadingState === 'loading') {
+    return <LoadingOverlay />;
+  }
+
+  if (ctx.loadingState === 'error') {
+    return <ErrorState message={ctx.error || 'Erro desconhecido'} onRetry={ctx.refresh} />;
+  }
+
+  return (
+    <div className={styles.dashboardRoot}>
+      <div className={styles.body}>
+        <div className={styles.contentArea}>
+          <ActivityHistoryTable
+            measurements={ctx.rawData.measurements}
+            batteries={ctx.rawData.batteries}
+            activities={ctx.rawData.activities}
+            locations={ctx.rawData.locations}
+            onSelectBattery={handleSelectBattery}
+          />
+        </div>
+      </div>
+
+      {selectedBatteryId && (
+        <BatteryDetailsPanel
+          id={selectedBatteryId}
+          batteries={ctx.rawData.batteries}
+          measurements={ctx.rawData.measurements}
+          locations={ctx.rawData.locations}
+          activities={ctx.rawData.activities}
+          onClose={handleClosePanel}
+        />
       )}
     </div>
   );
