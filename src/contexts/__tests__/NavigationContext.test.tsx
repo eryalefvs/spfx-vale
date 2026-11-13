@@ -9,6 +9,7 @@ import { act } from 'react-dom/test-utils';
 import {
   NavigationProvider,
   useNavigation,
+  useOptionalNavigation,
   getArea,
   getProcedure,
   AREAS_CATALOG,
@@ -114,5 +115,37 @@ describe('NavigationContext & Catálogo de Procedimentos', () => {
     }).toThrow('useNavigation must be used within a NavigationProvider');
 
     console.error = originalError;
+  });
+
+  it('useOptionalNavigation retorna undefined fora do Provider e o contexto dentro do Provider', () => {
+    let optNavOutside: ReturnType<typeof useNavigation> | undefined = 'initial' as any;
+    let optNavInside: ReturnType<typeof useNavigation> | undefined;
+
+    const TestConsumerOutside: React.FC = () => {
+      optNavOutside = useOptionalNavigation();
+      return null;
+    };
+
+    const TestConsumerInside: React.FC = () => {
+      optNavInside = useOptionalNavigation();
+      return null;
+    };
+
+    act(() => {
+      ReactDOM.render(<TestConsumerOutside />, container);
+    });
+    expect(optNavOutside).toBeUndefined();
+
+    act(() => {
+      ReactDOM.render(
+        <NavigationProvider>
+          <TestConsumerInside />
+        </NavigationProvider>,
+        container
+      );
+    });
+
+    expect(optNavInside).toBeDefined();
+    expect(optNavInside?.currentRoute).toEqual({ page: 'home' });
   });
 });

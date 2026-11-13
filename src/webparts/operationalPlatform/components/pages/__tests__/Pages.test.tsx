@@ -45,7 +45,7 @@ describe('Páginas da Plataforma Operacional', () => {
   });
 
   describe('HomePage', () => {
-    it('renderiza saudação com primeiro nome e cards de áreas do catálogo', async () => {
+    it('renderiza saudação com primeiro nome, títulos das áreas e seus respectivos procedimentos', async () => {
       await act(async () => {
         ReactDOM.render(
           <NavigationProvider>
@@ -57,12 +57,14 @@ describe('Páginas da Plataforma Operacional', () => {
 
       expect(container.textContent).toContain('Olá, Eryalef.');
       expect(container.textContent).toContain('O que vamos fazer hoje?');
-      expect(container.textContent).toContain('TOTAL DE ATIVIDADES');
       expect(container.textContent).toContain('Energia');
       expect(container.textContent).toContain('Telecomunicação');
+      expect(container.textContent).toContain('PRO-001107');
+      expect(container.textContent).toContain('Manutenção Preventiva de Baterias');
+      expect(container.textContent).toContain('Manutenção Preventiva de Switch AFS');
     });
 
-    it('ao clicar em um card de área, navega para a página da área', async () => {
+    it('ao clicar em um procedimento habilitado, navega diretamente para a página do procedimento', async () => {
       let nav: ReturnType<typeof useNavigation> | undefined;
 
       const Harness: React.FC = () => {
@@ -79,20 +81,55 @@ describe('Páginas da Plataforma Operacional', () => {
         );
       });
 
-      const areaCards = container.querySelectorAll('button');
-      // Encontrar card de Energia
-      let energiaBtn: HTMLButtonElement | undefined;
-      areaCards.forEach((btn) => {
-        if (btn.textContent?.includes('Energia')) energiaBtn = btn;
+      const procedureBtns = container.querySelectorAll('button');
+      let batteryProcBtn: HTMLButtonElement | undefined;
+      procedureBtns.forEach((btn) => {
+        if (btn.textContent?.includes('Manutenção Preventiva de Baterias')) batteryProcBtn = btn;
       });
 
-      expect(energiaBtn).toBeDefined();
+      expect(batteryProcBtn).toBeDefined();
 
       act(() => {
-        energiaBtn?.click();
+        batteryProcBtn?.click();
       });
 
-      expect(nav?.currentRoute).toEqual({ page: 'area', areaId: 'energia' });
+      expect(nav?.currentRoute).toEqual({
+        page: 'procedure',
+        areaId: 'energia',
+        procedureId: 'manutencao-baterias',
+      });
+    });
+
+    it('não navega ao clicar em um procedimento desabilitado (Em breve)', async () => {
+      let nav: ReturnType<typeof useNavigation> | undefined;
+
+      const Harness: React.FC = () => {
+        nav = useNavigation();
+        return <HomePage userDisplayName="Eryalef Vieira" context={mockContext} />;
+      };
+
+      await act(async () => {
+        ReactDOM.render(
+          <NavigationProvider>
+            <Harness />
+          </NavigationProvider>,
+          container
+        );
+      });
+
+      const procedureBtns = container.querySelectorAll('button');
+      let disabledProcBtn: HTMLButtonElement | undefined;
+      procedureBtns.forEach((btn) => {
+        if (btn.textContent?.includes('Inspeção em Retificadores 48 VCC')) disabledProcBtn = btn;
+      });
+
+      expect(disabledProcBtn).toBeDefined();
+
+      act(() => {
+        disabledProcBtn?.click();
+      });
+
+      expect(nav?.currentRoute).toEqual({ page: 'home' });
     });
   });
 
@@ -139,11 +176,11 @@ describe('Páginas da Plataforma Operacional', () => {
 
       expect(container.textContent).toContain('PRO-001107');
       expect(container.textContent).toContain('Manutenção Preventiva de Baterias');
-      expect(container.textContent).toContain('Nova Medição Avulsa');
+      expect(container.textContent).toContain('Nova Medição');
       expect(container.textContent).toContain('RG PRO 001107');
       expect(container.textContent).toContain('Dashboard');
       expect(container.textContent).toContain('Cadastro de Baterias');
-      expect(container.textContent).toContain('Em breve'); // Ação "Registros" desabilitada
+      expect(container.textContent).toContain('Registros');
     });
 
     it('ao clicar em ação habilitada, navega para a rota de ação', () => {
@@ -183,7 +220,7 @@ describe('Páginas da Plataforma Operacional', () => {
       });
     });
 
-    it('não navega ao clicar em ação desabilitada (Em breve)', () => {
+    it('ao clicar na ação Registros, navega para a rota de registros', () => {
       let nav: ReturnType<typeof useNavigation> | undefined;
 
       const Harness: React.FC = () => {
@@ -200,8 +237,6 @@ describe('Páginas da Plataforma Operacional', () => {
         );
       });
 
-      const initialRoute = nav?.currentRoute;
-
       const buttons = container.querySelectorAll('button');
       let recordsBtn: HTMLButtonElement | undefined;
       buttons.forEach((btn) => {
@@ -214,8 +249,12 @@ describe('Páginas da Plataforma Operacional', () => {
         recordsBtn?.click();
       });
 
-      // Permanece na mesma rota
-      expect(nav?.currentRoute).toEqual(initialRoute);
+      expect(nav?.currentRoute).toEqual({
+        page: 'action',
+        areaId: 'energia',
+        procedureId: 'manutencao-baterias',
+        action: 'records',
+      });
     });
   });
 

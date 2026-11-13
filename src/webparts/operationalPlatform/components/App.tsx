@@ -21,6 +21,7 @@ import { InspectionWizard } from './features/battery/inspection/InspectionWizard
 import { QuickMeasurementForm } from './features/battery/inspection/QuickMeasurementForm';
 import { DashboardProvider } from '../../../contexts/DashboardContext';
 import { DashboardPage } from './features/battery/dashboard/DashboardPage';
+import { ActivityRecordsPage } from './features/battery/dashboard/ActivityHistoryTable';
 import InputBatteries from './features/battery/management/InputBatteries';
 
 export interface IAppProps {
@@ -95,6 +96,14 @@ const AppContent: React.FC<IAppProps> = ({ context, userDisplayName }) => {
               userDisplayName={userDisplayName}
               context={context}
             />
+          );
+        }
+
+        if (action === 'records') {
+          return (
+            <DashboardProvider>
+              <ActivityRecordsPage />
+            </DashboardProvider>
           );
         }
 

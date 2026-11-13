@@ -115,14 +115,15 @@ export const AreaPage: React.FC<IAreaPageProps> = ({ areaId }) => {
           return (
             <button
               key={proc.id}
-              className={styles.procedureCard}
-              onClick={() =>
+              className={`${styles.procedureCard} ${!proc.enabled ? styles.procedureCardDisabled : ''}`}
+              onClick={() => {
+                if (!proc.enabled) return;
                 navigateTo({
                   page: 'procedure',
                   areaId: area.id,
                   procedureId: proc.id,
-                })
-              }
+                });
+              }}
             >
               <div className={styles.procedureNumber}>
                 {String(index + 1).padStart(2, '0')}
@@ -133,31 +134,37 @@ export const AreaPage: React.FC<IAreaPageProps> = ({ areaId }) => {
                 <h3 className={styles.procedureName}>{proc.name}</h3>
               </div>
 
-              <div className={styles.procedureStats}>
-                <div className={styles.statGroup}>
-                  <Icon iconName="Documentation" className={`${styles.statIcon} ${styles.statIconTotal}`} />
-                  <span className={styles.statLabel}>Total</span>
-                  <span className={`${styles.statValue} ${styles.statValueTotal}`}>
-                    {procStats.total}
-                  </span>
-                </div>
-                <div className={styles.statGroup}>
-                  <Icon iconName="Clock" className={`${styles.statIcon} ${styles.statIconPending}`} />
-                  <span className={styles.statLabel}>Pendentes</span>
-                  <span className={`${styles.statValue} ${styles.statValuePending}`}>
-                    {procStats.pending}
-                  </span>
-                </div>
-                <div className={styles.statGroup}>
-                  <Icon iconName="CheckboxComposite" className={`${styles.statIcon} ${styles.statIconDone}`} />
-                  <span className={styles.statLabel}>Concluídos</span>
-                  <span className={`${styles.statValue} ${styles.statValueDone}`}>
-                    {procStats.completed}
-                  </span>
-                </div>
-              </div>
+              {proc.enabled ? (
+                <>
+                  <div className={styles.procedureStats}>
+                    <div className={styles.statGroup}>
+                      <Icon iconName="Documentation" className={`${styles.statIcon} ${styles.statIconTotal}`} />
+                      <span className={styles.statLabel}>Total</span>
+                      <span className={`${styles.statValue} ${styles.statValueTotal}`}>
+                        {procStats.total}
+                      </span>
+                    </div>
+                    <div className={styles.statGroup}>
+                      <Icon iconName="Clock" className={`${styles.statIcon} ${styles.statIconPending}`} />
+                      <span className={styles.statLabel}>Pendentes</span>
+                      <span className={`${styles.statValue} ${styles.statValuePending}`}>
+                        {procStats.pending}
+                      </span>
+                    </div>
+                    <div className={styles.statGroup}>
+                      <Icon iconName="CheckboxComposite" className={`${styles.statIcon} ${styles.statIconDone}`} />
+                      <span className={styles.statLabel}>Concluídos</span>
+                      <span className={`${styles.statValue} ${styles.statValueDone}`}>
+                        {procStats.completed}
+                      </span>
+                    </div>
+                  </div>
 
-              <Icon iconName="ChevronRight" className={styles.procedureChevron} />
+                  <Icon iconName="ChevronRight" className={styles.procedureChevron} />
+                </>
+              ) : (
+                <span className={styles.comingSoonBadge}>Em breve</span>
+              )}
             </button>
           );
         })}

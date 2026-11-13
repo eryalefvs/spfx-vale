@@ -28,6 +28,7 @@ export interface ProcedureDefinition {
   id: string;
   code: string; // ex: PRO-001107
   name: string;
+  enabled: boolean;
   actions: ActionDefinition[];
 }
 
@@ -52,10 +53,11 @@ export const AREAS_CATALOG: AreaDefinition[] = [
         id: 'manutencao-baterias',
         code: 'PRO-001107',
         name: 'Manutenção Preventiva de Baterias',
+        enabled: true,
         actions: [
           {
             id: 'new-measurement',
-            label: 'Nova Medição Avulsa',
+            label: 'Nova Medição',
             description: 'Registrar uma medição avulsa de baterias em campo.',
             icon: 'Add',
             enabled: true,
@@ -86,7 +88,7 @@ export const AREAS_CATALOG: AreaDefinition[] = [
             label: 'Registros',
             description: 'Histórico completo de atividades realizadas',
             icon: 'DocumentSet',
-            enabled: false, // Em breve
+            enabled: true,
           },
         ],
       },
@@ -95,6 +97,7 @@ export const AREAS_CATALOG: AreaDefinition[] = [
         id: 'manutencao-energia-armarios',
         code: 'PRO-001116',
         name: 'Inspeção nos Sistemas de Energia dos Armários',
+        enabled: false,
         actions: [],
       },
 
@@ -102,6 +105,7 @@ export const AREAS_CATALOG: AreaDefinition[] = [
         id: 'inspecao-retificadores',
         code: 'PRO-001125',
         name: 'Inspeção em Retificadores 48 VCC',
+        enabled: false,
         actions: [],
       },
 
@@ -109,6 +113,7 @@ export const AREAS_CATALOG: AreaDefinition[] = [
         id: 'plano-periodico-spda',
         code: 'PRO-018910',
         name: 'Plano Periódico do SPDA',
+        enabled: false,
         actions: [],
       },
     ],
@@ -123,12 +128,14 @@ export const AREAS_CATALOG: AreaDefinition[] = [
         id: 'manutencao-preventiva-switch-afs',
         code: 'PRO-001131',
         name: 'Manutenção Preventiva de Switch AFS',
+        enabled: false,
         actions: [],
       },
       {
         id: 'manutencao-preventiva-multiplex',
         code: 'PRO-001131',
         name: 'Manutenção Preventiva de Multiplex',
+        enabled: false,
         actions: [],
       },
     ],
@@ -158,6 +165,10 @@ export interface INavigationContext {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const NavigationContext = React.createContext<INavigationContext>(undefined as any);
+
+export function useOptionalNavigation(): INavigationContext | undefined {
+  return React.useContext(NavigationContext);
+}
 
 export function useNavigation(): INavigationContext {
   const context = React.useContext(NavigationContext);

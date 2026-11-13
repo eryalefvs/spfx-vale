@@ -85,7 +85,7 @@ export const HomePage: React.FC<IHomePageProps> = ({ userDisplayName }) => {
       {/* Content */}
       <div className={styles.contentSection}>
         {/* KPIs */}
-        <div className={styles.kpiRow}>
+        {/* <div className={styles.kpiRow}>
           <div className={styles.kpiCard}>
             <div className={`${styles.kpiIcon} ${styles.kpiIconBlue}`}>
               <Icon iconName="DocumentSet" />
@@ -103,7 +103,7 @@ export const HomePage: React.FC<IHomePageProps> = ({ userDisplayName }) => {
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>PENDENTES / EM ANDAMENTO</span>
               {/* <span className={styles.kpiValue}>{kpis.pendingActivities}</span> */}
-            </div>
+        {/* </div>
           </div>
 
           <div className={styles.kpiCard}>
@@ -113,70 +113,57 @@ export const HomePage: React.FC<IHomePageProps> = ({ userDisplayName }) => {
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>CONCLUÍDAS NO MÊS</span>
               {/* <span className={styles.kpiValue}>{kpis.completedThisMonth}</span> */}
-            </div>
+        {/* </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Áreas de Procedimento */}
         <div className={styles.sectionHeader}>
           <span className={styles.sectionLabel}>ÁREAS DE PROCEDIMENTO</span>
         </div>
 
-        <div className={styles.areasGrid}>
-          {AREAS_CATALOG.map(area => (
-            <button
-              key={area.id}
-              className={styles.areaCard}
-              onClick={() => navigateTo({ page: 'area', areaId: area.id })}
-            >
-              <div className={styles.areaCardHeader}>
+        <div className={styles.areasList}>
+          {AREAS_CATALOG.map((area) => (
+            <div key={area.id} className={styles.areaSection}>
+              <div className={styles.areaTitleHeader}>
                 <div className={styles.areaIcon}>
                   <Icon iconName={area.icon} />
                 </div>
-                <span className={styles.areaProCount}>
-                  {area.procedures.length} PROs{' '}
-                  <Icon iconName="ChevronRight" />
-                </span>
+                <h2 className={styles.areaName}>{area.name}</h2>
               </div>
 
-              <h3 className={styles.areaName}>{area.name}</h3>
-              <p className={styles.areaDescription}>{area.description}</p>
+              <div className={styles.procedureList}>
+                {area.procedures.map((proc, index) => (
+                  <button
+                    key={proc.id}
+                    className={`${styles.procedureCard} ${!proc.enabled ? styles.procedureCardDisabled : ''}`}
+                    onClick={() => {
+                      if (!proc.enabled) return;
+                      navigateTo({
+                        page: 'procedure',
+                        areaId: area.id,
+                        procedureId: proc.id,
+                      });
+                    }}
+                  >
+                    <div className={styles.procedureNumber}>
+                      {String(index + 1).padStart(2, '0')}
+                    </div>
 
-              {area.procedures.length > 0 && (
-                <div className={styles.proTags}>
-                  {area.procedures.map((proc) => (
-                    <span key={proc.id} className={styles.proTag}>
-                      {proc.code}
-                    </span>
-                  ))}
-                </div>
-              )}
+                    <div className={styles.procedureInfo}>
+                      <span className={styles.procedureCode}>{proc.code}</span>
+                      <h3 className={styles.procedureName}>{proc.name}</h3>
+                    </div>
 
-              <div className={styles.areaStats}>
-                <div className={styles.statItem}>
-                  {area.name === "Energia" && (
-                    <>
-                      <div className={`${styles.statValue} ${styles.statValueTotal}`}>
-                        {kpis.totalActivities}
-                      </div>
-                      <div className={styles.statLabel}>TOTAL</div>
-                    </>
-                  )}
-                </div>
-                {/* <div className={styles.statItem}>
-                  <div className={`${styles.statValue} ${styles.statValuePending}`}>
-                    {kpis.pendingActivities}
-                  </div>
-                  <div className={styles.statLabel}>PENDENTES</div>
-                </div>
-                <div className={styles.statItem}>
-                  <div className={`${styles.statValue} ${styles.statValueDone}`}>
-                    {kpis.completedThisMonth}
-                  </div>
-                  <div className={styles.statLabel}>CONCLUÍDOS</div>
-                </div> */}
+                    {!proc.enabled ? (
+                      <span className={styles.comingSoonBadge}>Em breve</span>
+                    ) : (
+                      <Icon iconName="ChevronRight" className={styles.procedureChevron} />
+                    )}
+                  </button>
+                ))}
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
