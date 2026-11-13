@@ -7,43 +7,63 @@ import * as React from 'react';
 import styles from './CrmBoaJornada.module.scss';
 import {
   BoaJornadaFormData,
-  DEFAULT_BOA_JORNADA_FORM,
+  createDefaultForm,
   createEmptyAtividade,
+  buildWeek,
+  parseIsoDate,
   RiscoCriticoIcone,
-  AtividadeFormRow
+  AtividadeFormRow,
+  Sede,
+  Responsavel
 } from '../../../models/BoajornadaModels';
 import { BoaJornadaService } from '../../../services/BoaJornadaService';
-import { RiscosIconPicker } from './RiscosIconPicker';
+import { ActivityTableEditor } from './ActivityTableEditor';
 
 export interface IBoaJornadaFormProps {
   onBack: () => void;
   onSaved: () => void;
 }
 
-export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
-  onBack,
-  onSaved,
-}) => {
+const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+/** Coordenações = valores distintos de Supervisão na lista Sedes */
+export const getCoordenacoes = (sedes: Sede[]): { nome: string; gerencia: string }[] => {
+  const map: Record<string, string> = {};
+  sedes.forEach((s) => {
+    if (s.supervisao && !(s.supervisao in map)) map[s.supervisao] = s.gerencia;
+  });
+  return Object.keys(map).sort().map((nome) => ({ nome, gerencia: map[nome] }));
+};
+
+/** Responsáveis da coordenação (fallback: mesma gerência) */
+export const filterResponsaveis = (
+  all: Responsavel[], coordenacao: string, gerencia: string
+): Responsavel[] => {
+  if (!coordenacao) return [];
+  const bySup = all.filter((r) => r.supervisao === coordenacao);
+  if (bySup.length) return bySup;
+  return all.filter((r) => gerencia && r.gerencia === gerencia);
+};
+
+export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({ onBack, onSaved }) => {
   const service = React.useMemo(() => new BoaJornadaService(), []);
 
-
   // ── State ───────────────────────────────────────────────────────────
-  const [formData, setFormData] = React.useState<BoaJornadaFormData>(
-    DEFAULT_BOA_JORNADA_FORM
-  );
+  const [formData, setFormData] = React.useState<BoaJornadaFormData>(createDefaultForm);
   const [riscos, setRiscos] = React.useState<RiscoCriticoIcone[]>([]);
+  const [sedes, setSedes] = React.useState<Sede[]>([]);
+  const [responsaveis, setResponsaveis] = React.useState<Responsavel[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [toast, setToast] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Picker state
-  const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [pickerRowIndex, setPickerRowIndex] = React.useState<number>(0);
-
-  // ── Load riscos on mount ────────────────────────────────────────────
+  // ── Load on mount ───────────────────────────────────────────────────
   React.useEffect(() => {
-    service.loadRiscosCriticos().then(setRiscos).catch((err) => {
-      console.error('[BoaJornadaForm] Erro ao carregar riscos:', err);
-    });
+    service.loadRiscosCriticos().then(setRiscos)
+      .catch((err) => console.error('[BoaJornadaForm] Erro ao carregar riscos:', err));
+    service.loadSedes().then(setSedes)
+      .catch((err) => console.error('[BoaJornadaForm] Erro ao carregar Sedes:', err));
+    service.loadResponsaveis().then(setResponsaveis)
+      .catch((err) => console.error('[BoaJornadaForm] Erro ao carregar Responsáveis:', err));
   }, []);
 
   // ── Auto-hide toast ─────────────────────────────────────────────────
@@ -55,76 +75,81 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
     return;
   }, [toast]);
 
+  const coordenacoes = React.useMemo(() => getCoordenacoes(sedes), [sedes]);
+  const gerencias = React.useMemo(
+    () => coordenacoes.map((c) => c.gerencia).filter((g, i, a) => g && a.indexOf(g) === i).sort(),
+    [coordenacoes]
+  );
+  const respFiltrados = React.useMemo(
+    () => filterResponsaveis(responsaveis, formData.coordenacao, formData.gerencia),
+    [responsaveis, formData.coordenacao, formData.gerencia]
+  );
+
   // ── Handlers ────────────────────────────────────────────────────────
 
   const updateField = (field: keyof BoaJornadaFormData, value: string): void => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateAtividade = (
-    index: number,
-    field: keyof AtividadeFormRow,
-    value: string
-  ): void => {
+  const onCoordenacaoChange = (value: string): void => {
+    const c = coordenacoes.find((x) => x.nome === value);
+    setFormData((prev) => ({ ...prev, coordenacao: value, gerencia: c?.gerencia || prev.gerencia }));
+  };
+
+  const setModo = (modo: 'dia' | 'semana'): void => {
     setFormData((prev) => {
-      const atividades = [...prev.atividades];
-      atividades[index] = { ...atividades[index], [field]: value };
-      return { ...prev, atividades };
+      if (prev.modo === modo) return prev;
+      const base = prev.dias[0]?.data;
+      const dias = modo === 'semana'
+        ? buildWeek(base)
+        : [{ data: base, incluido: true, atividades: [createEmptyAtividade()] }];
+      return { ...prev, modo, dias };
     });
   };
 
-  const addAtividade = (): void => {
-    setFormData((prev) => ({
-      ...prev,
-      atividades: [...prev.atividades, createEmptyAtividade()],
-    }));
+  const changeWeek = (anyDate: string): void => {
+    if (!anyDate) return;
+    setFormData((prev) => ({ ...prev, dias: buildWeek(anyDate) }));
   };
 
-  const removeAtividade = (index: number): void => {
+  const updateDia = (index: number, patch: Partial<BoaJornadaFormData['dias'][0]>): void => {
     setFormData((prev) => {
-      if (prev.atividades.length <= 1) return prev;
-      const atividades = prev.atividades.filter((_, i) => i !== index);
-      return { ...prev, atividades };
+      const dias = [...prev.dias];
+      dias[index] = { ...dias[index], ...patch };
+      return { ...prev, dias };
     });
   };
 
-  const openPicker = (rowIndex: number): void => {
-    setPickerRowIndex(rowIndex);
-    setPickerOpen(true);
-  };
-
-  const handlePickerConfirm = (selectedIds: number[]): void => {
-    setFormData((prev) => {
-      const atividades = [...prev.atividades];
-      atividades[pickerRowIndex] = {
-        ...atividades[pickerRowIndex],
-        riscosCriticosIds: selectedIds,
-      };
-      return { ...prev, atividades };
-    });
-    setPickerOpen(false);
+  const copiarParaProximo = (index: number): void => {
+    const src = formData.dias[index].atividades;
+    const copia: AtividadeFormRow[] = src.map((a) => ({ ...createEmptyAtividade(), ...a, tempId: createEmptyAtividade().tempId, status: '' }));
+    updateDia(index + 1, { atividades: copia, incluido: true });
   };
 
   const handleSave = async (): Promise<void> => {
-    // Validação básica
     if (!formData.coordenacao.trim()) {
-      setToast({ type: 'error', message: 'Preencha o campo Coordenação.' });
+      setToast({ type: 'error', message: 'Selecione a Coordenação.' });
       return;
     }
-    if (!formData.data) {
-      setToast({ type: 'error', message: 'Preencha o campo Data.' });
+    if (formData.modo === 'semana' && !formData.semanaNome.trim()) {
+      setToast({ type: 'error', message: 'Informe o nome da semana.' });
       return;
     }
-    const hasAtividades = formData.atividades.some((a) => a.atividade.trim());
-    if (!hasAtividades) {
+    const diasValidos = formData.dias.filter(
+      (d) => d.incluido && d.atividades.some((a) => a.atividade.trim())
+    );
+    if (!diasValidos.length) {
       setToast({ type: 'error', message: 'Adicione pelo menos uma atividade.' });
       return;
     }
 
     try {
       setSaving(true);
-      await service.saveBoaJornadaCompleta(formData);
-      setToast({ type: 'success', message: 'Boa Jornada salva com sucesso!' });
+      const ids = await service.saveBoaJornadaCompleta(formData);
+      setToast({
+        type: 'success',
+        message: ids.length > 1 ? `${ids.length} Boa Jornadas salvas com sucesso!` : 'Boa Jornada salva com sucesso!',
+      });
       setTimeout(() => onSaved(), 1500);
     } catch (err) {
       console.error('[BoaJornadaForm] Erro ao salvar:', err);
@@ -134,8 +159,20 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
     }
   };
 
-  const getRiscoById = (id: number): RiscoCriticoIcone | undefined =>
-    riscos.find((r) => r.id === id);
+  const formatDiaLabel = (iso: string): string => {
+    const d = parseIsoDate(iso);
+    return `${DIAS_SEMANA[d.getDay()]} — ${d.toLocaleDateString('pt-BR')}`;
+  };
+
+  const modoBtn = (modo: 'dia' | 'semana', label: string): React.ReactNode => (
+    <button
+      className={formData.modo === modo ? styles.btnSave : styles.btnCancel}
+      onClick={() => setModo(modo)}
+      style={{ padding: '6px 16px' }}
+    >
+      {label}
+    </button>
+  );
 
   // ── Render ──────────────────────────────────────────────────────────
 
@@ -143,7 +180,6 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
     <div className={styles.homePage}>
       <div className={styles.formContainer}>
 
-        {/* Toast */}
         {toast && (
           <div className={toast.type === 'success' ? styles.successToast : styles.errorToast}>
             {toast.type === 'success' ? '✓' : '✕'} {toast.message}
@@ -153,9 +189,7 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
         {/* Header */}
         <div className={styles.formHeader}>
           <div className={styles.formHeaderLeft}>
-            <button className={styles.formBackButton} onClick={onBack} title="Voltar">
-              ←
-            </button>
+            <button className={styles.formBackButton} onClick={onBack} title="Voltar">←</button>
             <h1 className={styles.formTitle}>Boa Jornada</h1>
           </div>
           <div className={styles.formHeaderRight}>
@@ -164,142 +198,129 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
           </div>
         </div>
 
-        {/* Campos: Supervisão, Área, Data */}
+        {/* Modo */}
+        <div style={{ display: 'flex', gap: 8, margin: '12px 0' }}>
+          {modoBtn('dia', '📅 Dia único')}
+          {modoBtn('semana', '🗓️ Semana inteira')}
+        </div>
+
+        {/* Campos gerais */}
         <div className={styles.formFieldsRow}>
           <div className={styles.formFieldGroup}>
+            <span className={styles.formFieldLabel}>Coordenação:</span>
+            <select
+              className={styles.formFieldInput}
+              value={formData.coordenacao}
+              onChange={(e) => onCoordenacaoChange(e.target.value)}
+            >
+              <option value="">— Selecione —</option>
+              {coordenacoes.map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
+            </select>
+          </div>
+          <div className={styles.formFieldGroup}>
             <span className={styles.formFieldLabel}>Gerência:</span>
-            <input
-              type="text"
+            <select
               className={styles.formFieldInput}
               value={formData.gerencia}
               onChange={(e) => updateField('gerencia', e.target.value)}
-              placeholder="Informe a gerência"
-            />
+            >
+              <option value="">— Selecione —</option>
+              {gerencias.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
           </div>
           <div className={styles.formFieldGroup}>
-            <span className={styles.formFieldLabel}>Coordenação:</span>
-            <input
-              type="text"
-              className={styles.formFieldInput}
-              value={formData.coordenacao}
-              onChange={(e) => updateField('coordenacao', e.target.value)}
-              placeholder="Ex: SAT 02"
-            />
-          </div>
-          <div className={styles.formFieldGroup}>
+            {formData.modo === 'semana' && (
+              <span className={styles.formFieldLabel}>Semana de:</span>
+            )}
             <input
               type="date"
               className={`${styles.formFieldInput} ${styles.formFieldDate}`}
-              value={formData.data}
-              onChange={(e) => updateField('data', e.target.value)}
+              value={formData.dias[0]?.data || ''}
+              onChange={(e) =>
+                formData.modo === 'semana'
+                  ? changeWeek(e.target.value)
+                  : updateDia(0, { data: e.target.value })
+              }
             />
-            <div className={styles.formFieldCalendarIcon}>📅</div>
           </div>
         </div>
 
-        {/* Tabela de Atividades */}
+        <div className={styles.formFieldsRow}>
+          <div className={styles.formFieldGroup} style={{ flex: 2 }}>
+            <span className={styles.formFieldLabel}>Tema:</span>
+            <input
+              type="text"
+              className={styles.formFieldInput}
+              value={formData.tema}
+              onChange={(e) => updateField('tema', e.target.value)}
+              placeholder="Tema do Boa Jornada"
+            />
+          </div>
+          {formData.modo === 'semana' && (
+            <div className={styles.formFieldGroup}>
+              <span className={styles.formFieldLabel}>Nome da semana:</span>
+              <input
+                type="text"
+                className={styles.formFieldInput}
+                value={formData.semanaNome}
+                onChange={(e) => updateField('semanaNome', e.target.value)}
+                placeholder="Ex: Parada Semana 45"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Atividades */}
         <div className={styles.tableSection}>
-          <table className={styles.activityTable}>
-            <thead className={styles.tableHeader}>
-              <tr>
-                <th style={{ width: '28%' }}>
-                  <span className={styles.tableHeaderTitle}>Atividades</span>
-                  <span className={styles.tableHeaderHint}>
-                    Descreva a atividade assim como consta na Ordem de
-                    Manutenção (OM). Informe o número da OM.
-                  </span>
-                </th>
-                <th style={{ width: '20%' }}>
-                  <span className={styles.tableHeaderTitle}>Executantes</span>
-                  <span className={styles.tableHeaderHint}>
-                    Quem está nesta atividade (Próprios e Contratados)?
-                  </span>
-                </th>
-                <th style={{ width: '28%' }}>
-                  <span className={styles.tableHeaderTitle}>O que pode matar?</span>
-                  <span className={styles.tableHeaderHint}>
-                    Identifique situações de riscos que podem levar a morte
-                    se não gerenciadas e como poderia acontecer.
-                  </span>
-                </th>
-                <th style={{ width: '20%' }}>
-                  <span className={styles.tableHeaderTitle}>Riscos Críticos aplicáveis?</span>
-                  <span className={styles.tableHeaderHint}>
-                    Informar quais riscos críticos devem ser verificados no CRM
-                  </span>
-                </th>
-                <th style={{ width: '4%' }}>{/* Ações */}</th>
-              </tr>
-            </thead>
-            <tbody className={styles.tableBody}>
-              {formData.atividades.map((atividade, index) => (
-                <tr key={atividade.tempId}>
-                  <td>
-                    <textarea
-                      className={styles.tableCellInput}
-                      value={atividade.atividade}
-                      onChange={(e) => updateAtividade(index, 'atividade', e.target.value)}
-                      placeholder="Descreva a atividade..."
+          {formData.modo === 'dia' ? (
+            <ActivityTableEditor
+              rows={formData.dias[0].atividades}
+              onChange={(rows) => updateDia(0, { atividades: rows })}
+              riscos={riscos}
+              responsaveis={respFiltrados}
+              showHints
+            />
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                {formData.dias.map((d, i) => (
+                  <label key={d.data} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input
+                      type="checkbox"
+                      checked={d.incluido}
+                      onChange={(e) => updateDia(i, { incluido: e.target.checked })}
                     />
-                  </td>
-                  <td>
-                    <textarea
-                      className={styles.tableCellInput}
-                      value={atividade.executantes}
-                      onChange={(e) => updateAtividade(index, 'executantes', e.target.value)}
-                      placeholder="Nomes dos executantes..."
+                    {formatDiaLabel(d.data)}
+                  </label>
+                ))}
+              </div>
+              {formData.dias.map((d, i) => d.incluido && (
+                <details key={d.data} open={i === 0} style={{ marginBottom: 12, border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 16 }}>
+                    {formatDiaLabel(d.data)} — {d.atividades.filter((a) => a.atividade.trim()).length} atividade(s)
+                  </summary>
+                  <div style={{ marginTop: 8 }}>
+                    <ActivityTableEditor
+                      rows={d.atividades}
+                      onChange={(rows) => updateDia(i, { atividades: rows })}
+                      riscos={riscos}
+                      responsaveis={respFiltrados}
                     />
-                  </td>
-                  <td>
-                    <textarea
-                      className={styles.tableCellInput}
-                      value={atividade.oQuePodeMatar}
-                      onChange={(e) => updateAtividade(index, 'oQuePodeMatar', e.target.value)}
-                      placeholder="Riscos identificados..."
-                    />
-                  </td>
-                  <td>
-                    <div className={styles.tableCellRiscos}>
-                      {atividade.riscosCriticosIds.map((rId) => {
-                        const risco = getRiscoById(rId);
-                        return risco?.iconeUrl ? (
-                          <img
-                            key={rId}
-                            src={risco.iconeUrl}
-                            alt={risco.title}
-                            className={styles.riscoIconSelected}
-                            title={risco.title}
-                          />
-                        ) : null;
-                      })}
+                    {i < formData.dias.length - 1 && (
                       <button
-                        className={styles.addRiscoButton}
-                        onClick={() => openPicker(index)}
-                        title="Selecionar riscos críticos"
+                        className={styles.btnCancel}
+                        style={{ marginTop: 8 }}
+                        onClick={() => copiarParaProximo(i)}
+                        title="Substitui as atividades do próximo dia"
                       >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td>
-                    {formData.atividades.length > 1 && (
-                      <button
-                        className={styles.removeRowButton}
-                        onClick={() => removeAtividade(index)}
-                        title="Remover atividade"
-                      >
-                        ✕
+                        ⤵ Copiar atividades para o próximo dia
                       </button>
                     )}
-                  </td>
-                </tr>
+                  </div>
+                </details>
               ))}
-            </tbody>
-          </table>
-
-          <button className={styles.addRowButton} onClick={addAtividade}>
-            + Adicionar Atividade
-          </button>
+            </>
+          )}
         </div>
 
         {/* Seção Inferior */}
@@ -309,9 +330,6 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
               <span className={styles.bottomCellHeaderLabel}>
                 Riscos Críticos com maior índice de desvios:
               </span>
-              {/* <span className={styles.bottomCellSublabel}>
-              Aponte os Riscos Críticos com maior
-            </span> */}
             </div>
             <textarea
               className={styles.bottomCellInput}
@@ -320,29 +338,6 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
               placeholder="Informe os riscos..."
             />
           </div>
-
-          {/* <div className={styles.bottomCell}>
-          <div className={styles.bottomCellHeader}>
-            <span className={styles.bottomCellHeaderLabel}>Coordenação</span>
-          </div>
-          <textarea
-            className={styles.bottomCellInput}
-            value={formData.coordenacao}
-            onChange={(e) => updateField('coordenacao', e.target.value)}
-            placeholder=""
-          />
-        </div>
-        <div className={styles.bottomCell}>
-          <div className={styles.bottomCellHeader}>
-            <span className={styles.bottomCellHeaderLabel}>Gerência</span>
-          </div>
-          <textarea
-            className={styles.bottomCellInput}
-            value={formData.gerencia}
-            onChange={(e) => updateField('gerencia', e.target.value)}
-            placeholder=""
-          />
-        </div> */}
           <div className={styles.bottomCell}>
             <div className={styles.bottomCellHeader}>
               <span className={styles.bottomCellHeaderLabel}>Detalhamento dos desvios:</span>
@@ -358,27 +353,11 @@ export const BoaJornadaForm: React.FC<IBoaJornadaFormProps> = ({
 
         {/* Ações */}
         <div className={styles.formActions}>
-          <button className={styles.btnCancel} onClick={onBack}>
-            Cancelar
-          </button>
-          <button
-            className={styles.btnSave}
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <button className={styles.btnCancel} onClick={onBack}>Cancelar</button>
+          <button className={styles.btnSave} onClick={handleSave} disabled={saving}>
             {saving ? 'Salvando...' : '💾 Salvar'}
           </button>
         </div>
-
-        {/* Picker Modal */}
-        {pickerOpen && (
-          <RiscosIconPicker
-            riscos={riscos}
-            selectedIds={formData.atividades[pickerRowIndex]?.riscosCriticosIds || []}
-            onConfirm={handlePickerConfirm}
-            onCancel={() => setPickerOpen(false)}
-          />
-        )}
       </div>
     </div>
   );

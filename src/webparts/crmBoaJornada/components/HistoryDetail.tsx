@@ -10,36 +10,42 @@ import {
   BoaJornadaAtividade,
   RiscoCriticoIcone,
   AtividadeFormRow,
-  createEmptyAtividade
+  Responsavel,
+  Sede,
+  parseIsoDate
 } from '../../../models/BoajornadaModels';
+import { STATUS_CORES } from '../../../constants/BoaJornadaConstants';
 import { BoaJornadaService } from '../../../services/BoaJornadaService';
-import { RiscosIconPicker } from './RiscosIconPicker';
-import { FontSizes } from '@fluentui/react';
+import { ActivityTableEditor } from './ActivityTableEditor';
+import { filterResponsaveis } from './BoaJornadaForm';
 
 export interface IHistoryDetailProps {
   jornadaId: number;
   onBack: () => void;
 }
 
-export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
-  jornadaId,
-  onBack,
-}) => {
+export const StatusBadge: React.FC<{ status: string }> = ({ status }) =>
+  status ? (
+    <span style={{
+      background: STATUS_CORES[status] || '#999', color: '#fff', borderRadius: 12,
+      padding: '2px 10px', fontSize: 13, whiteSpace: 'nowrap'
+    }}>{status}</span>
+  ) : <span style={{ color: '#999' }}>—</span>;
+
+export const HistoryDetail: React.FC<IHistoryDetailProps> = ({ jornadaId, onBack }) => {
   const service = React.useMemo(() => new BoaJornadaService(), []);
 
   // ── State ───────────────────────────────────────────────────────────
   const [infoGerais, setInfoGerais] = React.useState<BoaJornadaInfoGerais | null>(null);
   const [atividades, setAtividades] = React.useState<BoaJornadaAtividade[]>([]);
   const [riscos, setRiscos] = React.useState<RiscoCriticoIcone[]>([]);
+  const [responsaveis, setResponsaveis] = React.useState<Responsavel[]>([]);
+  const [sedes, setSedes] = React.useState<Sede[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [editing, setEditing] = React.useState(false);
-  const [editRows, setEditRows] = React.useState<(AtividadeFormRow & { spId?: number })[]>([]);
+  const [editRows, setEditRows] = React.useState<AtividadeFormRow[]>([]);
   const [saving, setSaving] = React.useState(false);
   const [toast, setToast] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  // Picker state
-  const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [pickerRowIndex, setPickerRowIndex] = React.useState<number>(0);
 
   // ── Load data ───────────────────────────────────────────────────────
   const loadData = async (): Promise<void> => {
@@ -64,6 +70,11 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
     loadData().catch(() => { /* handled above */ });
   }, [jornadaId]);
 
+  React.useEffect(() => {
+    service.loadResponsaveis().then(setResponsaveis).catch((e) => console.error(e));
+    service.loadSedes().then(setSedes).catch((e) => console.error(e));
+  }, []);
+
   // ── Auto-hide toast ─────────────────────────────────────────────────
   React.useEffect(() => {
     if (toast) {
@@ -73,79 +84,42 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
     return;
   }, [toast]);
 
+  const respFiltrados = React.useMemo(() => {
+    if (!infoGerais) return [];
+    const ger = infoGerais.gerencia || sedes.find((s) => s.supervisao === infoGerais.coordenacao)?.gerencia || '';
+    return filterResponsaveis(responsaveis, infoGerais.coordenacao, ger);
+  }, [responsaveis, sedes, infoGerais]);
+
   // ── Edit mode ───────────────────────────────────────────────────────
 
   const startEditing = (): void => {
-    const rows = atividades.map((a) => ({
+    setEditRows(atividades.map((a) => ({
       tempId: `existing_${a.id}`,
       spId: a.id,
       atividade: a.atividade,
       executantes: a.executantes,
-      oQuePodeMatar: a.oQuePodeMatar,
+      tipoAtividade: a.tipoAtividade || 'Planejada',
+      status: a.status,
+      // registros antigos: traz o "O que pode matar" para os pontos de atenção
+      pontosAtencao: a.pontosAtencao || a.oQuePodeMatar,
       riscosCriticosIds: [...a.riscosCriticosIds],
-    }));
-    setEditRows(rows);
+    })));
     setEditing(true);
-  };
-
-  const cancelEditing = (): void => {
-    setEditing(false);
-    setEditRows([]);
-  };
-
-  const updateEditRow = (
-    index: number,
-    field: keyof AtividadeFormRow,
-    value: string
-  ): void => {
-    setEditRows((prev) => {
-      const rows = [...prev];
-      rows[index] = { ...rows[index], [field]: value };
-      return rows;
-    });
-  };
-
-  const addEditRow = (): void => {
-    setEditRows((prev) => [...prev, { ...createEmptyAtividade(), spId: undefined }]);
-  };
-
-  const removeEditRow = (index: number): void => {
-    if (editRows.length <= 1) return;
-    setEditRows((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const openPicker = (rowIndex: number): void => {
-    setPickerRowIndex(rowIndex);
-    setPickerOpen(true);
-  };
-
-  const handlePickerConfirm = (selectedIds: number[]): void => {
-    setEditRows((prev) => {
-      const rows = [...prev];
-      rows[pickerRowIndex] = { ...rows[pickerRowIndex], riscosCriticosIds: selectedIds };
-      return rows;
-    });
-    setPickerOpen(false);
   };
 
   const saveEdits = async (): Promise<void> => {
     try {
       setSaving(true);
 
-      // Identificar atividades existentes que foram removidas
-      const existingIds = atividades.map((a) => a.id);
       const keptIds = editRows.filter((r) => r.spId).map((r) => r.spId!);
-      const deletedIds = existingIds.filter((id) => keptIds.indexOf(id) < 0);
+      const deletedIds = atividades.map((a) => a.id).filter((id) => keptIds.indexOf(id) < 0);
 
-      // Deletar removidas
       for (const id of deletedIds) {
         await service.deleteAtividade(id);
       }
 
-      // Atualizar existentes e criar novas
       for (const row of editRows) {
         if (!row.atividade.trim()) continue;
-
         if (row.spId) {
           await service.updateAtividade(row.spId, row);
         } else {
@@ -166,33 +140,35 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
 
   // ── Helpers ─────────────────────────────────────────────────────────
 
-  const getRiscoById = (id: number): RiscoCriticoIcone | undefined =>
-    riscos.find((r) => r.id === id);
+  const getRiscoById = (id: number): RiscoCriticoIcone | undefined => riscos.find((r) => r.id === id);
 
   const formatDate = (dateStr: string): string => {
     if (!dateStr) return '—';
     try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('pt-BR');
+      return new Date(dateStr).toLocaleDateString('pt-BR');
     } catch {
       return dateStr;
     }
   };
 
-  // ── Loading ─────────────────────────────────────────────────────────
+  const header = (
+    <div className={styles.detailHeader}>
+      <div className={styles.detailHeaderLeft}>
+        <button className={styles.formBackButton} onClick={onBack} title="Voltar">←</button>
+        <h1 className={styles.detailTitle}>Boa Jornada</h1>
+      </div>
+      <div className={styles.formHeaderRight}>
+        <span className={styles.formHeaderLogo}>CRM</span>
+        <span className={styles.formHeaderLogoCheck}>✓</span>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
       <div className={styles.homePage}>
         <div className={styles.detailContainer}>
-          <div className={styles.detailHeader}>
-            <div className={styles.detailHeaderLeft}>
-              <button className={styles.formBackButton} onClick={onBack} title="Voltar">
-                ←
-              </button>
-              <h1 className={styles.detailTitle}>Boa Jornada</h1>
-            </div>
-          </div>
+          {header}
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
             <span className={styles.loadingText}>Carregando...</span>
@@ -204,75 +180,65 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
 
   if (!infoGerais) return null;
 
+  const field = (label: string, value: string): React.ReactNode => (
+    <div className={styles.detailFieldGroup}>
+      <span className={styles.detailFieldLabel}>{label}</span>
+      <div className={styles.detailFieldValue}>{value || '—'}</div>
+    </div>
+  );
+
   // ── Render ──────────────────────────────────────────────────────────
 
   return (
     <div className={styles.homePage}>
       <div className={styles.detailContainer}>
-        {/* Toast */}
         {toast && (
           <div className={toast.type === 'success' ? styles.successToast : styles.errorToast}>
             {toast.type === 'success' ? '✓' : '✕'} {toast.message}
           </div>
         )}
 
-        {/* Header */}
-        <div className={styles.detailHeader}>
-          <div className={styles.detailHeaderLeft}>
-            <button className={styles.formBackButton} onClick={onBack} title="Voltar">
-              ←
-            </button>
-            <h1 className={styles.detailTitle}>Boa Jornada</h1>
-          </div>
-          <div className={styles.formHeaderRight}>
-            <span className={styles.formHeaderLogo}>CRM</span>
-            <span className={styles.formHeaderLogoCheck}>✓</span>
-          </div>
-        </div>
+        {header}
 
-        {/* Campos (somente leitura) */}
         <div className={styles.detailFieldsRow}>
-          <div className={styles.detailFieldGroup}>
-            <span className={styles.detailFieldLabel}>Gerência:</span>
-            <div className={styles.detailFieldValue}>{infoGerais.gerencia || '—'}</div>
-          </div>
-          <div className={styles.detailFieldGroup}>
-            <span className={styles.detailFieldLabel}>Coordenação:</span>
-            <div className={styles.detailFieldValue}>{infoGerais.coordenacao || '—'}</div>
-          </div>
-          <div className={styles.detailFieldGroup}>
-            <span className={styles.detailFieldLabel}>Data:</span>
-            <div className={styles.detailFieldValue}>{formatDate(infoGerais.data)}</div>
-          </div>
+          {field('Gerência:', infoGerais.gerencia)}
+          {field('Coordenação:', infoGerais.coordenacao)}
+          {field('Data:', formatDate(infoGerais.data))}
+        </div>
+        <div className={styles.detailFieldsRow}>
+          {field('Tema:', infoGerais.tema)}
+          {infoGerais.semana && field('Semana:', infoGerais.semana)}
         </div>
 
-        {/* Tabela de Atividades */}
         <div className={styles.detailTableSection}>
           {!editing ? (
-            // ── Modo leitura ─────────────────────────────────────────────
             <>
-              <table className={styles.detailTable}>
+              <table className={styles.detailTable} style={{ tableLayout: 'fixed', width: '100%' }}>
                 <thead>
                   <tr>
-                    <th style={{ width: '28%' }}>Atividades</th>
-                    <th style={{ width: '20%' }}>Executantes</th>
-                    <th style={{ width: '28%' }}>O que pode matar?</th>
-                    <th style={{ width: '24%' }}>Riscos Críticos aplicáveis?</th>
+                    <th style={{ width: '22%' }}>Atividades</th>
+                    <th style={{ width: '12%' }}>Tipo</th>
+                    <th style={{ width: '13%' }}>Status</th>
+                    <th style={{ width: '18%' }}>Pontos de atenção / desvios</th>
+                    <th style={{ width: '18%' }}>Executantes</th>
+                    <th style={{ width: '17%' }}>Riscos Críticos aplicáveis</th>
                   </tr>
                 </thead>
                 <tbody>
                   {atividades.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#999' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#999' }}>
                         Nenhuma atividade registrada.
                       </td>
                     </tr>
                   ) : (
                     atividades.map((ativ) => (
                       <tr key={ativ.id}>
-                        <td style={{ fontSize: '20px' }}>{ativ.atividade}</td>
-                        <td style={{ fontSize: '20px' }}>{ativ.executantes}</td>
-                        <td style={{ fontSize: '20px' }}>{ativ.oQuePodeMatar}</td>
+                        <td style={{ fontSize: '16px', wordBreak: 'break-word' }}>{ativ.atividade}</td>
+                        <td style={{ fontSize: '15px' }}>{ativ.tipoAtividade || '—'}</td>
+                        <td><StatusBadge status={ativ.status} /></td>
+                        <td style={{ fontSize: '15px', wordBreak: 'break-word' }}>{ativ.pontosAtencao || ativ.oQuePodeMatar || '—'}</td>
+                        <td style={{ fontSize: '15px', wordBreak: 'break-word', whiteSpace: 'normal' }}>{ativ.executantes}</td>
                         <td>
                           <div className={styles.detailRiscosCell}>
                             {ativ.riscosCriticosIds.map((rId) => {
@@ -295,110 +261,23 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
                 </tbody>
               </table>
 
-              {/* Botão editar */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
                 <button className={styles.btnEdit} onClick={startEditing}>
-                  ✏️ Editar Atividades
+                  ✏️ Editar Atividades / Status
                 </button>
               </div>
             </>
           ) : (
-            // ── Modo edição ──────────────────────────────────────────────
             <>
-              <table className={styles.activityTable}>
-                <thead className={styles.tableHeader}>
-                  <tr>
-                    <th style={{ width: '28%' }}>
-                      <span className={styles.tableHeaderTitle}>Atividades</span>
-                    </th>
-                    <th style={{ width: '20%' }}>
-                      <span className={styles.tableHeaderTitle}>Executantes</span>
-                    </th>
-                    <th style={{ width: '28%' }}>
-                      <span className={styles.tableHeaderTitle}>O que pode matar?</span>
-                    </th>
-                    <th style={{ width: '20%' }}>
-                      <span className={styles.tableHeaderTitle}>Riscos Críticos</span>
-                    </th>
-                    <th style={{ width: '4%' }}>{/* Ações */}</th>
-                  </tr>
-                </thead>
-                <tbody className={styles.tableBody}>
-                  {editRows.map((row, index) => (
-                    <tr key={row.tempId}>
-                      <td>
-                        <textarea
-                          className={styles.tableCellInput}
-                          value={row.atividade}
-                          onChange={(e) => updateEditRow(index, 'atividade', e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <textarea
-                          className={styles.tableCellInput}
-                          value={row.executantes}
-                          onChange={(e) => updateEditRow(index, 'executantes', e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <textarea
-                          className={styles.tableCellInput}
-                          value={row.oQuePodeMatar}
-                          onChange={(e) => updateEditRow(index, 'oQuePodeMatar', e.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <div className={styles.tableCellRiscos}>
-                          {row.riscosCriticosIds.map((rId) => {
-                            const risco = getRiscoById(rId);
-                            return risco?.iconeUrl ? (
-                              <img
-                                key={rId}
-                                src={risco.iconeUrl}
-                                alt={risco.title}
-                                className={styles.riscoIconSelected}
-                                title={risco.title}
-                              />
-                            ) : null;
-                          })}
-                          <button
-                            className={styles.addRiscoButton}
-                            onClick={() => openPicker(index)}
-                            title="Selecionar riscos"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        {editRows.length > 1 && (
-                          <button
-                            className={styles.removeRowButton}
-                            onClick={() => removeEditRow(index)}
-                            title="Remover"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <button className={styles.addRowButton} onClick={addEditRow}>
-                + Adicionar Atividade
-              </button>
-
+              <ActivityTableEditor
+                rows={editRows}
+                onChange={setEditRows}
+                riscos={riscos}
+                responsaveis={respFiltrados}
+              />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-                <button className={styles.btnCancel} onClick={cancelEditing}>
-                  Cancelar
-                </button>
-                <button
-                  className={styles.btnSave}
-                  onClick={saveEdits}
-                  disabled={saving}
-                >
+                <button className={styles.btnCancel} onClick={() => setEditing(false)}>Cancelar</button>
+                <button className={styles.btnSave} onClick={saveEdits} disabled={saving}>
                   {saving ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
@@ -406,46 +285,21 @@ export const HistoryDetail: React.FC<IHistoryDetailProps> = ({
           )}
         </div>
 
-        {/* Seção Inferior (somente leitura) */}
         <div className={styles.detailBottomSection}>
           <div className={styles.detailBottomCell}>
-            <span className={styles.detailBottomLabel}>
-              Riscos Críticos com maior índice de desvios:
-            </span>
-            <span className={styles.detailBottomValue}>
-              {infoGerais.riscosMaiorIndice || '—'}
-            </span>
+            <span className={styles.detailBottomLabel}>Riscos Críticos com maior índice de desvios:</span>
+            <span className={styles.detailBottomValue}>{infoGerais.riscosMaiorIndice || '—'}</span>
           </div>
-          {/* <div className={styles.detailBottomCell}>
-          <span className={styles.detailBottomLabel}>Coordenação</span>
-          <span className={styles.detailBottomValue}>
-            {infoGerais.coordenacao || '—'}
-          </span>
-        </div>
-        <div className={styles.detailBottomCell}>
-          <span className={styles.detailBottomLabel}>Gerência</span>
-          <span className={styles.detailBottomValue}>
-            {infoGerais.gerencia || '—'}
-          </span>
-        </div> */}
           <div className={styles.detailBottomCell}>
             <span className={styles.detailBottomLabel}>Detalhamento dos desvios:</span>
-            <span className={styles.detailBottomValue}>
-              {infoGerais.detalhamento || '—'}
-            </span>
+            <span className={styles.detailBottomValue}>{infoGerais.detalhamento || '—'}</span>
           </div>
         </div>
-
-        {/* Picker Modal */}
-        {pickerOpen && (
-          <RiscosIconPicker
-            riscos={riscos}
-            selectedIds={editRows[pickerRowIndex]?.riscosCriticosIds || []}
-            onConfirm={handlePickerConfirm}
-            onCancel={() => setPickerOpen(false)}
-          />
-        )}
       </div>
     </div>
   );
 };
+
+// usado pelo HistoryList para formatar datas YYYY-MM-DD sem erro de fuso
+export const formatIsoPtBr = (s: string): string =>
+  s ? parseIsoDate(s).toLocaleDateString('pt-BR') : '—';
