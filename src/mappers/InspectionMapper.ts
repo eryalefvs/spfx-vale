@@ -92,6 +92,7 @@ export class InspectionMapper {
       [f.Data_da_Atividade]: data.measurementDate,
       [f.Tipo_de_Atividade]: 'Outros',
       [f.Supervisao]: data.supervision,
+      [f.ResponsaveisId]: data.responsibleIds || [],
       [f.Tipo_de_Local]: data.locationType,
       [f.SedeId]: data.sedeId,
       [f.KMId]: data.kmId,

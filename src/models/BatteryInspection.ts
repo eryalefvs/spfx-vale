@@ -74,6 +74,8 @@ export interface IQuickMeasurementData {
   kmId: number;
   locationId: number;
   measurementDate: string;
+  responsibles?: string[];
+  responsibleIds?: number[];
   ambientTemperature: string;
   totalFloatVoltage: string;
   parsedBatteries: IParsedBatteryData[];

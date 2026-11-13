@@ -144,6 +144,8 @@ describe('InspectionMapper', () => {
         kmId: 100,
         locationId: 10,
         measurementDate: '2026-03-15',
+        responsibles: ['João Técnico'],
+        responsibleIds: [7, 8],
         ambientTemperature: '26.0',
         totalFloatVoltage: '130.0',
         parsedBatteries: [],
@@ -155,6 +157,7 @@ describe('InspectionMapper', () => {
       expect(result.Title).toBe('AVULSA-TU-KM100-2026-03-15');
       expect(result[SP_FIELDS.Activities.OM]).toBe('AVULSA');
       expect(result[SP_FIELDS.Activities.Tipo_de_Atividade]).toBe('Outros');
+      expect(result[SP_FIELDS.Activities.ResponsaveisId]).toEqual([7, 8]);
       expect(result[SP_FIELDS.Activities.Temperatura_da_Sala]).toBe(26.0);
       expect(result[SP_FIELDS.Activities.Tensao_Total]).toBe(130.0);
       expect(result[SP_FIELDS.Activities.Observacoes_Gerais]).toBe('Medição avulsa');

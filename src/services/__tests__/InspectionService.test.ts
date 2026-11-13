@@ -7,30 +7,38 @@
 import { InspectionService } from '../InspectionService';
 import { SharePointService } from '../SharePointService';
 import { BatteryService } from '../BatteryService';
-import { VOLTAGE_THRESHOLDS, RESISTANCE_THRESHOLDS } from '../../constants/DashboardConstants';
 import { DEFAULT_WIZARD_DATA, IParsedBatteryData } from '../../models/BatteryInspection';
 import * as XLSX from 'xlsx';
 
 describe('InspectionService - Limiares e Status', () => {
   describe('calculateVoltageStatus - Valores Limite', () => {
-    it('classifica 12.79V como CRITICO e 12.80V como ALERTA (limiar alertMin)', () => {
-      expect(InspectionService.calculateVoltageStatus(12.79)).toBe('CRITICO');
-      expect(InspectionService.calculateVoltageStatus(12.8)).toBe('ALERTA');
+    it('classifica 12.29V como CRITICO e 12.30V como ALERTA (limiar alertMin)', () => {
+      expect(InspectionService.calculateVoltageStatus(12.29)).toBe('CRITICO');
+      expect(InspectionService.calculateVoltageStatus(12.3)).toBe('ALERTA');
     });
 
-    it('classifica 13.39V como ALERTA e 13.40V como EXCELENTE (limiar excellentMin)', () => {
-      expect(InspectionService.calculateVoltageStatus(13.39)).toBe('ALERTA');
-      expect(InspectionService.calculateVoltageStatus(13.4)).toBe('EXCELENTE');
+    it('classifica 12.49V como ALERTA e 12.50V como EXCELENTE (limiar excellentMin)', () => {
+      expect(InspectionService.calculateVoltageStatus(12.49)).toBe('ALERTA');
+      expect(InspectionService.calculateVoltageStatus(12.5)).toBe('EXCELENTE');
     });
 
-    it('classifica valor ideal (13.8V) e limite superior (14.50V) como EXCELENTE', () => {
+    it('classifica valor ideal (13.8V) e limite superior (14.90V) como EXCELENTE', () => {
       expect(InspectionService.calculateVoltageStatus(13.8)).toBe('EXCELENTE');
-      expect(InspectionService.calculateVoltageStatus(14.5)).toBe('EXCELENTE');
+      expect(InspectionService.calculateVoltageStatus(14.9)).toBe('EXCELENTE');
     });
 
-    it('classifica 14.51V como CRITICO (sobretensão além de maxAcceptable)', () => {
-      expect(InspectionService.calculateVoltageStatus(14.51)).toBe('CRITICO');
+    it('classifica 14.91V como CRITICO (sobretensão além de maxAcceptable)', () => {
+      expect(InspectionService.calculateVoltageStatus(14.91)).toBe('CRITICO');
       expect(InspectionService.calculateVoltageStatus(16.0)).toBe('CRITICO');
+    });
+
+    it('classifica tensão para local MO (ideal 2V: excelente >= 1.95, alerta >= 1.90, crítico < 1.90 ou > 2.30)', () => {
+      expect(InspectionService.calculateVoltageStatus(2.0, 'MO')).toBe('EXCELENTE');
+      expect(InspectionService.calculateVoltageStatus(1.95, 'MO')).toBe('EXCELENTE');
+      expect(InspectionService.calculateVoltageStatus(1.92, 'MO')).toBe('ALERTA');
+      expect(InspectionService.calculateVoltageStatus(1.90, 'MO')).toBe('ALERTA');
+      expect(InspectionService.calculateVoltageStatus(1.89, 'MO')).toBe('CRITICO');
+      expect(InspectionService.calculateVoltageStatus(2.31, 'MO')).toBe('CRITICO');
     });
   });
 
@@ -44,6 +52,15 @@ describe('InspectionService - Limiares e Status', () => {
       expect(InspectionService.calculateResistanceStatus(4.0)).toBe('ALERTA');
       expect(InspectionService.calculateResistanceStatus(4.01)).toBe('CRITICO');
       expect(InspectionService.calculateResistanceStatus(5.5)).toBe('CRITICO');
+    });
+
+    it('classifica resistência para local MO (ideal 0.66Ω: excelente <= 0.66, alerta <= 0.72, crítico > 0.72)', () => {
+      expect(InspectionService.calculateResistanceStatus(0.66, 'MO')).toBe('EXCELENTE');
+      expect(InspectionService.calculateResistanceStatus(0.60, 'MO')).toBe('EXCELENTE');
+      expect(InspectionService.calculateResistanceStatus(0.70, 'MO')).toBe('ALERTA');
+      expect(InspectionService.calculateResistanceStatus(0.72, 'MO')).toBe('ALERTA');
+      expect(InspectionService.calculateResistanceStatus(0.73, 'MO')).toBe('CRITICO');
+      expect(InspectionService.calculateResistanceStatus(1.0, 'MO')).toBe('CRITICO');
     });
   });
 

@@ -13,8 +13,7 @@ import { mapSPToLocation, mapToSede, mapToResponsibles } from '../mappers/Dashbo
 import { Location, Sedes, Responsibles } from '../models/DashboardModels';
 import {
   SP_FIELDS,
-  VOLTAGE_THRESHOLDS,
-  RESISTANCE_THRESHOLDS,
+  getHealthThresholds,
 } from '../constants/DashboardConstants';
 import { BatteryStatus } from '../types/DashboardTypes';
 import * as XLSX from 'xlsx';
@@ -72,7 +71,8 @@ export class InspectionService {
    */
   public static parseExcelFile(
     data: ArrayBuffer,
-    fileName: string
+    fileName: string,
+    locationType?: string
   ): IParsedBatteryData[] {
     const isCsv = fileName.toLowerCase().endsWith('.csv');
 
@@ -143,9 +143,9 @@ export class InspectionService {
 
       if (isNaN(resistance) || isNaN(voltage)) continue;
 
-      const voltageStatus = InspectionService.calculateVoltageStatus(voltage);
+      const voltageStatus = InspectionService.calculateVoltageStatus(voltage, locationType);
       const resistanceStatus =
-        InspectionService.calculateResistanceStatus(resistance);
+        InspectionService.calculateResistanceStatus(resistance, locationType);
       const overallStatus = InspectionService.calculateOverallStatus(
         voltageStatus,
         resistanceStatus
@@ -169,20 +169,23 @@ export class InspectionService {
 
   // ── Cálculo de Status ─────────────────────────────────────────────────
 
-  /** Calcula o status de tensão com base nos thresholds */
-  public static calculateVoltageStatus(voltage: number): BatteryStatus {
-    if (voltage > VOLTAGE_THRESHOLDS.maxAcceptable) return 'CRITICO';
-    if (voltage >= VOLTAGE_THRESHOLDS.excellentMin) return 'EXCELENTE';
-    if (voltage >= VOLTAGE_THRESHOLDS.alertMin) return 'ALERTA';
+  /** Calcula o status de tensão com base nos thresholds (por tipo de local) */
+  public static calculateVoltageStatus(voltage: number, locationType?: string): BatteryStatus {
+    const t = getHealthThresholds(locationType).voltage;
+    if (voltage > t.maxAcceptable) return 'CRITICO';
+    if (voltage >= t.excellentMin) return 'EXCELENTE';
+    if (voltage >= t.alertMin) return 'ALERTA';
     return 'CRITICO';
   }
 
-  /** Calcula o status de resistência com base nos thresholds */
+  /** Calcula o status de resistência com base nos thresholds (por tipo de local) */
   public static calculateResistanceStatus(
-    resistance: number
+    resistance: number,
+    locationType?: string
   ): BatteryStatus {
-    if (resistance <= RESISTANCE_THRESHOLDS.excellentMax) return 'EXCELENTE';
-    if (resistance <= RESISTANCE_THRESHOLDS.alertMax) return 'ALERTA';
+    const t = getHealthThresholds(locationType).resistance;
+    if (resistance <= t.excellentMax) return 'EXCELENTE';
+    if (resistance <= t.alertMax) return 'ALERTA';
     return 'CRITICO';
   }
 
