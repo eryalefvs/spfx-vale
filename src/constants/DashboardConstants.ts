@@ -13,13 +13,13 @@ import { BatteryStatus, LocationType } from '../types/DashboardTypes';
 export const VOLTAGE_THRESHOLDS = {
   ideal: 13.8,
   /** Acima deste valor = EXCELENTE */
-  excellentMin: 13.4,
+  excellentMin: 12.5,
   /** Entre alertMin e excellentMin = ALERTA */
-  alertMin: 12.8,
+  alertMin: 12.3,
   /** Abaixo de alertMin = CRITICO */
 
   /** Limite máximo aceitável (sobretensão) */
-  maxAcceptable: 14.5,
+  maxAcceptable: 14.9,
 } as const;
 
 /** Limites de resistência individual (Ω) — Ideal: 2.5Ω */
@@ -31,6 +31,56 @@ export const RESISTANCE_THRESHOLDS = {
   alertMax: 4.0,
   /** Acima de alertMax = CRITICO */
 } as const;
+
+/** Formato comum dos thresholds de saúde (tensão + resistência) */
+export interface HealthThresholds {
+  voltage: { ideal: number; excellentMin: number; alertMin: number; maxAcceptable: number };
+  resistance: { ideal: number; excellentMax: number; alertMax: number };
+}
+
+/** Thresholds padrão (baterias de 12V) */
+export const DEFAULT_HEALTH_THRESHOLDS: HealthThresholds = {
+  voltage: VOLTAGE_THRESHOLDS,
+  resistance: RESISTANCE_THRESHOLDS,
+};
+
+/**
+ * Thresholds específicos por tipo de local.
+ * MO (Microondas): elementos de 2V — Tensão ideal 2.0V, Resistência ideal 0.66Ω.
+ *  - Tensão:      EXCELENTE 1.95–2.30 | ATENÇÃO 1.90–1.95 | CRÍTICO < 1.90 ou > 2.30
+ *  - Resistência: EXCELENTE ≤ 0.66    | ATENÇÃO ≤ 0.72    | CRÍTICO > 0.72
+ */
+export const LOCATION_HEALTH_THRESHOLDS: Record<string, HealthThresholds> = {
+  MO: {
+    voltage: { ideal: 2.0, excellentMin: 1.95, alertMin: 1.9, maxAcceptable: 2.3 },
+    resistance: { ideal: 0.66, excellentMax: 0.66, alertMax: 0.72 },
+  },
+};
+
+/** Retorna os thresholds aplicáveis ao tipo de local */
+export function getHealthThresholds(locationType?: string): HealthThresholds {
+  const key = (locationType || '').toUpperCase().trim();
+  return LOCATION_HEALTH_THRESHOLDS[key] || DEFAULT_HEALTH_THRESHOLDS;
+}
+
+/** Locais cujas baterias são ligadas em PARALELO (tensão total = média) */
+export const PARALLEL_LOCATION_TYPES: string[] = ['ARM', 'CV', 'PN', 'HBD'];
+
+export function isParallelLocation(locationType?: string): boolean {
+  return PARALLEL_LOCATION_TYPES.indexOf((locationType || '').toUpperCase().trim()) !== -1;
+}
+
+/**
+ * Calcula a tensão total de um conjunto de baterias.
+ * - Paralelo (ARM, CV, PN, HBD): média das tensões
+ * - Demais (série): soma das tensões
+ */
+export function calculateTotalVoltage(voltages: number[], locationType?: string): number {
+  const valid = voltages.filter((v) => Number.isFinite(v));
+  if (valid.length === 0) return 0;
+  const sum = valid.reduce((acc, v) => acc + v, 0);
+  return isParallelLocation(locationType) ? sum / valid.length : sum;
+}
 
 /** Limites de corrente (A) — valores provisórios */
 export const CURRENT_THRESHOLDS = {
@@ -48,7 +98,7 @@ export interface BankRule {
   description: string;
 }
 
-export type Locations = ['TU', 'CV', 'MO', 'CANCELA', 'TE', 'HBD', 'AMV', 'CCP', 'ABR', 'ABRA', 'ABRB']
+export type Locations = ['TU', 'CV', 'MO', 'CANCELA', 'TE', 'HBD', 'AMV', 'CCP', 'ABR', 'ABRA', 'ABRB', 'GUA']
 
 export const BANK_RULES: Record<LocationType, BankRule> = {
   TU: {
@@ -116,6 +166,12 @@ export const BANK_RULES: Record<LocationType, BankRule> = {
     numberOfBanks: 2,
     batteriesPerBank: [24, 24],
     description: 'Abrigo — 2 bancos de 24 baterias',
+  },
+  GUA: {
+    totalBatteries: 3,
+    numberOfBanks: 1,
+    batteriesPerBank: [3],
+    description: 'Guarita — 1 banco de 3 baterias',
   }
 };
 

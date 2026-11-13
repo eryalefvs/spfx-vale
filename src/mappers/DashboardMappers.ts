@@ -207,8 +207,10 @@ export function mapSPToActivity(item: any): Activity {
     integritySolutions: item[f.Integridade_Solucoes] || '',
     justificationLackOfInfo: item[f.Justificativa_Falta_Info] || '',
     justificationNoContactMCM: item[f.Justificativa_Sem_Contato] || '',
-    // Campo auxiliar para resolução in-memory do lookup de responsáveis
+    // Campos auxiliares para resolução in-memory dos lookups
     _responsaveisId: item[f.ResponsaveisId],
+    _sedeId: item[f.SedeId],
+    _kmId: item[f.KMId],
   };
   return activity as Activity;
 }

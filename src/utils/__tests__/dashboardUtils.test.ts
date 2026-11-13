@@ -45,47 +45,62 @@ import {
   getDisabledBanks,
 } from '../dashboardUtils';
 import { Battery, Measurement, Location, Activity, DashboardFilters } from '../../models/DashboardModels';
-import { STATUS_COLORS, STATUS_LABELS } from '../../constants/DashboardConstants';
+import { STATUS_COLORS, STATUS_LABELS, calculateTotalVoltage, isParallelLocation } from '../../constants/DashboardConstants';
 
 describe('dashboardUtils - Funções de Classificação e Limiares', () => {
   describe('getHealthStatus - Particionamento de Equivalência e Análise de Valor-Limite', () => {
     // Limiares:
-    // Tensão: alertMin = 12.8, excellentMin = 13.4, maxAcceptable = 14.5
+    // Tensão: alertMin = 12.3, excellentMin = 12.5, maxAcceptable = 14.9
     // Resistência: excellentMax = 3.7, alertMax = 4.0
 
     it('classifica como EXCELENTE nos limites e interior da faixa ideal', () => {
       // Limites exatos
-      expect(getHealthStatus(13.4, 3.7)).toBe('EXCELENTE');
-      expect(getHealthStatus(14.5, 3.7)).toBe('EXCELENTE');
+      expect(getHealthStatus(12.5, 3.7)).toBe('EXCELENTE');
+      expect(getHealthStatus(14.9, 3.7)).toBe('EXCELENTE');
       // Interior da faixa ideal
       expect(getHealthStatus(13.8, 2.5)).toBe('EXCELENTE');
       expect(getHealthStatus(13.5, 1.0)).toBe('EXCELENTE');
     });
 
     it('classifica como ALERTA nos valores-limite e classes de equivalência de alerta', () => {
-      // Tensão em 12.8 (limite inferior de alerta) com resistência excelente
-      expect(getHealthStatus(12.8, 3.5)).toBe('ALERTA');
-      // Tensão logo abaixo de 13.4 (13.39 V) com resistência excelente
-      expect(getHealthStatus(13.39, 3.5)).toBe('ALERTA');
+      // Tensão em 12.3 (limite inferior de alerta) com resistência excelente
+      expect(getHealthStatus(12.3, 3.5)).toBe('ALERTA');
+      // Tensão logo abaixo de 12.5 (12.49 V) com resistência excelente
+      expect(getHealthStatus(12.49, 3.5)).toBe('ALERTA');
       // Tensão excelente (13.8 V), mas resistência em alerta (3.71 Ω a 4.0 Ω)
       expect(getHealthStatus(13.8, 3.71)).toBe('ALERTA');
       expect(getHealthStatus(13.8, 4.0)).toBe('ALERTA');
-      // Ambos em alerta (12.8 V e 4.0 Ω)
-      expect(getHealthStatus(12.8, 4.0)).toBe('ALERTA');
+      // Ambos em alerta (12.3 V e 4.0 Ω)
+      expect(getHealthStatus(12.3, 4.0)).toBe('ALERTA');
     });
 
     it('classifica como CRITICO para subtensão, sobretensão ou alta resistência', () => {
-      // Subtensão: logo abaixo do limite de alerta (12.79 V)
-      expect(getHealthStatus(12.79, 2.5)).toBe('CRITICO');
+      // Subtensão: logo abaixo do limite de alerta (12.29 V)
+      expect(getHealthStatus(12.29, 2.5)).toBe('CRITICO');
       expect(getHealthStatus(11.5, 2.5)).toBe('CRITICO');
 
       // Sobretensão e alta resistência
-      expect(getHealthStatus(14.51, 4.01)).toBe('CRITICO');
+      expect(getHealthStatus(14.91, 4.01)).toBe('CRITICO');
 
       // Alta resistência: logo acima de alertMax (4.01 Ω)
       expect(getHealthStatus(13.8, 4.01)).toBe('CRITICO');
-      expect(getHealthStatus(12.8, 4.01)).toBe('CRITICO');
+      expect(getHealthStatus(12.3, 4.01)).toBe('CRITICO');
       expect(getHealthStatus(10.0, 5.0)).toBe('CRITICO');
+    });
+
+    it('classifica corretamente para local MO com thresholds específicos (ideal 2V, 0.66Ω)', () => {
+      // EXCELENTE para MO
+      expect(getHealthStatus(2.0, 0.66, 'MO')).toBe('EXCELENTE');
+      expect(getHealthStatus(1.95, 0.50, 'MO')).toBe('EXCELENTE');
+
+      // ALERTA para MO
+      expect(getHealthStatus(1.92, 0.66, 'MO')).toBe('ALERTA');
+      expect(getHealthStatus(2.0, 0.70, 'MO')).toBe('ALERTA');
+
+      // CRITICO para MO
+      expect(getHealthStatus(1.85, 0.66, 'MO')).toBe('CRITICO');
+      expect(getHealthStatus(2.35, 0.66, 'MO')).toBe('CRITICO');
+      expect(getHealthStatus(2.0, 0.75, 'MO')).toBe('CRITICO');
     });
   });
 
@@ -257,12 +272,12 @@ describe('dashboardUtils - Leitura de Medições e KPIs', () => {
   ];
 
   describe('getLastMeasurementMap', () => {
-    it('retorna a primeira medição encontrada para cada número de série', () => {
+    it('retorna a primeira medição encontrada para cada batteryId', () => {
       const map = getLastMeasurementMap(mockMeasurements);
       expect(map.size).toBe(2);
-      expect(map.get('BAT-001')?.id).toBe(101);
-      expect(map.get('BAT-002')?.id).toBe(102);
-      expect(map.has('BAT-003')).toBe(false);
+      expect(map.get(1)?.id).toBe(101);
+      expect(map.get(2)?.id).toBe(102);
+      expect(map.has(3)).toBe(false);
     });
 
     it('retorna mapa vazio para array vazio', () => {
@@ -276,20 +291,85 @@ describe('dashboardUtils - Leitura de Medições e KPIs', () => {
       const readings = getBatteryLastReadings(mockBatteries, mockMeasurements);
       expect(readings.length).toBe(3);
 
-      const r1 = readings.find((r) => r.battery.serialNumber === 'BAT-001');
+      const r1 = readings.find((r) => r.battery.id === 1);
       expect(r1?.measurement?.id).toBe(101);
       expect(r1?.voltage).toBe(13.8);
       expect(r1?.status).toBe('EXCELENTE');
 
-      const r2 = readings.find((r) => r.battery.serialNumber === 'BAT-002');
+      const r2 = readings.find((r) => r.battery.id === 2);
       expect(r2?.measurement?.id).toBe(102);
       expect(r2?.voltage).toBe(13.0);
       expect(r2?.status).toBe('ALERTA');
 
-      const r3 = readings.find((r) => r.battery.serialNumber === 'BAT-003');
+      const r3 = readings.find((r) => r.battery.id === 3);
       expect(r3?.measurement).toBeUndefined();
       expect(r3?.voltage).toBe(0);
       expect(r3?.status).toBe('EXCELENTE'); // Fallback padrão
+    });
+
+    it('diferencia corretamente baterias com mesmo número de série (ex: NA) pelo ID/NO', () => {
+      const naBatteries: Battery[] = [
+        { id: 101, serialNumber: 'NA', sequenceNumber: 1, bankNumber: 1, model: 'M', manufacturer: 'F', locationId: 10, locationTitle: 'TU-100', locationType: 'TU', km: 100, status: 'Ativa' },
+        { id: 102, serialNumber: 'NA', sequenceNumber: 2, bankNumber: 1, model: 'M', manufacturer: 'F', locationId: 10, locationTitle: 'TU-100', locationType: 'TU', km: 100, status: 'Ativa' },
+      ];
+      const naMeasurements: Measurement[] = [
+        { id: 201, title: 'M1', batteryId: 101, batterySerialNumber: 'NA', voltage: 13.75, resistance: 2.1, current: 1, overallStatus: 'EXCELENTE', voltageStatus: 'EXCELENTE', resistanceStatus: 'EXCELENTE', date: new Date('2026-03-01T10:00:00Z'), activityId: 1001 },
+        { id: 202, title: 'M2', batteryId: 102, batterySerialNumber: 'NA', voltage: 12.9, resistance: 3.9, current: 1, overallStatus: 'ALERTA', voltageStatus: 'ALERTA', resistanceStatus: 'ALERTA', date: new Date('2026-03-01T10:00:00Z'), activityId: 1001 },
+      ];
+
+      const readings = getBatteryLastReadings(naBatteries, naMeasurements);
+      expect(readings[0].voltage).toBe(13.75);
+      expect(readings[0].resistance).toBe(2.1);
+      expect(readings[1].voltage).toBe(12.9);
+      expect(readings[1].resistance).toBe(3.9);
+
+      const voltages = getBatteryVoltagesByBank(naBatteries, naMeasurements, 1);
+      expect(voltages).toEqual([
+        { label: 1, voltage: 13.75, fill: STATUS_COLORS.EXCELENTE },
+        { label: 2, voltage: 12.9, fill: STATUS_COLORS.ALERTA },
+      ]);
+
+      const resistances = getBatteryResistancesByBank(naBatteries, naMeasurements, 1);
+      expect(resistances).toEqual([
+        { label: 1, resistance: 2.1, fill: STATUS_COLORS.EXCELENTE },
+        { label: 2, resistance: 3.9, fill: STATUS_COLORS.ALERTA },
+      ]);
+
+      const evolution = getBatteryEvolution(naBatteries, naMeasurements, mockActivities);
+      expect(evolution.rows[0].values[0].voltage).toBe(13.75);
+      expect(evolution.rows[1].values[0].voltage).toBe(12.9);
+    });
+
+    it('usa voltageStatus no gráfico de tensão e resistanceStatus no gráfico de resistência separadamente', () => {
+      const batteriesWithMixedStatus: Battery[] = [
+        { id: 301, serialNumber: 'B-MIX', sequenceNumber: 1, bankNumber: 1, model: 'M', manufacturer: 'F', locationId: 10, locationTitle: 'TU-100', locationType: 'TU', km: 100, status: 'Ativa' },
+      ];
+      const measurementsWithMixedStatus: Measurement[] = [
+        {
+          id: 401,
+          title: 'M-MIX',
+          batteryId: 301,
+          batterySerialNumber: 'B-MIX',
+          voltage: 13.8,
+          resistance: 4.2,
+          current: 1,
+          overallStatus: 'CRITICO',
+          voltageStatus: 'EXCELENTE',
+          resistanceStatus: 'CRITICO',
+          date: new Date('2026-03-01T10:00:00Z'),
+          activityId: 1001,
+        },
+      ];
+
+      const voltages = getBatteryVoltagesByBank(batteriesWithMixedStatus, measurementsWithMixedStatus, 1);
+      expect(voltages).toEqual([
+        { label: 1, voltage: 13.8, fill: STATUS_COLORS.EXCELENTE },
+      ]);
+
+      const resistances = getBatteryResistancesByBank(batteriesWithMixedStatus, measurementsWithMixedStatus, 1);
+      expect(resistances).toEqual([
+        { label: 1, resistance: 4.2, fill: STATUS_COLORS.CRITICO },
+      ]);
     });
   });
 
@@ -465,6 +545,66 @@ describe('dashboardUtils - Tendências e Agregações', () => {
     expect(totalTrend[1].value).toBe(125.0);
   });
 
+  it('calcula getTotalVoltageTrend para locais em paralelo como a média das tensões', () => {
+    const parallelActivities: Activity[] = [
+      {
+        id: 999,
+        maintenanceOrder: 'OM-999',
+        activityDate: new Date('2026-03-01T10:00:00Z'),
+        activityType: 'Preventiva',
+        supervision: 'Supervisão 1',
+        sede: 'Sede A',
+        locationType: 'ARM',
+        km: '100',
+        responsibles: ['Tecnico 1'],
+        generalObservations: '',
+        integrityAnomalies: '',
+        integritySolutions: '',
+        justificationLackOfInfo: '',
+        justificationNoContactMCM: '',
+      },
+    ];
+
+    const parallelMeasurements: Measurement[] = [
+      { id: 901, title: 'M1', activityId: 999, batteryId: 1, batterySerialNumber: 'B1', voltage: 12.0, resistance: 2.0, current: 1, overallStatus: 'EXCELENTE', voltageStatus: 'EXCELENTE', resistanceStatus: 'EXCELENTE', date: new Date('2026-03-01T10:00:00Z') },
+      { id: 902, title: 'M2', activityId: 999, batteryId: 2, batterySerialNumber: 'B2', voltage: 14.0, resistance: 2.0, current: 1, overallStatus: 'EXCELENTE', voltageStatus: 'EXCELENTE', resistanceStatus: 'EXCELENTE', date: new Date('2026-03-01T10:00:00Z') },
+    ];
+
+    const trend = getTotalVoltageTrend(parallelMeasurements, parallelActivities);
+    expect(trend.length).toBe(1);
+    // Média de 12.0 e 14.0 = 13.0
+    expect(trend[0].value).toBe(13.0);
+  });
+
+  describe('calculateTotalVoltage e isParallelLocation', () => {
+    it('identifica locais com baterias em paralelo (ARM, CV, PN, HBD)', () => {
+      expect(isParallelLocation('ARM')).toBe(true);
+      expect(isParallelLocation('CV')).toBe(true);
+      expect(isParallelLocation('PN')).toBe(true);
+      expect(isParallelLocation('HBD')).toBe(true);
+      expect(isParallelLocation('arm')).toBe(true);
+
+      expect(isParallelLocation('TU')).toBe(false);
+      expect(isParallelLocation('MO')).toBe(false);
+      expect(isParallelLocation('CANCELA')).toBe(false);
+      expect(isParallelLocation(undefined)).toBe(false);
+    });
+
+    it('calcula tensão total como média para locais paralelos e soma para os demais', () => {
+      const voltages = [12.0, 14.0];
+      // Paralelo: média (13.0)
+      expect(calculateTotalVoltage(voltages, 'ARM')).toBe(13.0);
+      expect(calculateTotalVoltage(voltages, 'CV')).toBe(13.0);
+      expect(calculateTotalVoltage(voltages, 'PN')).toBe(13.0);
+      expect(calculateTotalVoltage(voltages, 'HBD')).toBe(13.0);
+
+      // Série: soma (26.0)
+      expect(calculateTotalVoltage(voltages, 'TU')).toBe(26.0);
+      expect(calculateTotalVoltage(voltages, 'MO')).toBe(26.0);
+      expect(calculateTotalVoltage(voltages)).toBe(26.0);
+    });
+  });
+
   it('calcula getResistanceTrendByBank em formato pivot multi-linha', () => {
     const trendByBank = getResistanceTrendByBank(batteries, measurements, activities);
     expect(trendByBank.length).toBe(2);
@@ -630,16 +770,23 @@ describe('dashboardUtils - Filtros Globais', () => {
     expect(filterMeasurements(measurements, { searchText: '', endDate: new Date('2026-02-15') }, batteryIds).length).toBe(1);
   });
 
-  it('filtra atividades por supervisao, sede, locationType e datas', () => {
+  it('filtra atividades por supervisao, sede, locationType, locationId, medições filtradas e datas', () => {
     const activities: Activity[] = [
-      { id: 1, maintenanceOrder: 'OM1', activityDate: new Date('2026-01-01'), activityType: 'P', supervision: 'S1', sede: 'Sed1', locationType: 'TU', km: '10', responsibles: [], generalObservations: '', integrityAnomalies: '', integritySolutions: '', justificationLackOfInfo: '', justificationNoContactMCM: '' },
-      { id: 2, maintenanceOrder: 'OM2', activityDate: new Date('2026-03-01'), activityType: 'P', supervision: 'S2', sede: 'Sed2', locationType: 'CV', km: '20', responsibles: [], generalObservations: '', integrityAnomalies: '', integritySolutions: '', justificationLackOfInfo: '', justificationNoContactMCM: '' },
+      { id: 1, maintenanceOrder: 'OM1', activityDate: new Date('2026-01-01'), activityType: 'P', supervision: 'S1', sede: 'Sed1', locationType: 'TU', locationId: 10, km: '10', responsibles: [], generalObservations: '', integrityAnomalies: '', integritySolutions: '', justificationLackOfInfo: '', justificationNoContactMCM: '' },
+      { id: 2, maintenanceOrder: 'OM2', activityDate: new Date('2026-03-01'), activityType: 'P', supervision: 'S2', sede: 'Sed2', locationType: 'CV', locationId: 20, km: '20', responsibles: [], generalObservations: '', integrityAnomalies: '', integritySolutions: '', justificationLackOfInfo: '', justificationNoContactMCM: '' },
     ];
 
     expect(filterActivities(activities, { searchText: '', supervisao: 'S1' }).length).toBe(1);
     expect(filterActivities(activities, { searchText: '', sede: 'Sed2' }).length).toBe(1);
     expect(filterActivities(activities, { searchText: '', locationType: 'TU' }).length).toBe(1);
+    expect(filterActivities(activities, { searchText: '', locationId: 10 }).length).toBe(1);
     expect(filterActivities(activities, { searchText: '', startDate: new Date('2026-02-01') }).length).toBe(1);
+
+    const filteredMeasurements: Measurement[] = [
+      { id: 100, title: 'M1', batteryId: 1, activityId: 1, batterySerialNumber: 'B1', voltage: 13.8, resistance: 2.0, current: 1, overallStatus: 'EXCELENTE', voltageStatus: 'EXCELENTE', resistanceStatus: 'EXCELENTE', date: new Date('2026-01-01') },
+    ];
+    expect(filterActivities(activities, { searchText: '', locationId: 10 }, filteredMeasurements)).toHaveLength(1);
+    expect(filterActivities(activities, { searchText: '', locationId: 10 }, filteredMeasurements)[0].id).toBe(1);
   });
 });
 

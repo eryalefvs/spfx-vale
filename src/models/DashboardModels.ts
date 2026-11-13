@@ -62,6 +62,7 @@ export interface Activity {
   sede: string;
   activityType: string;        // Tipo_de_Atividade
   locationType: string;        // Tipo_de_Local
+  locationId?: number;         // ID do local resolvido (via KMId ou medições)
   km: string;
   roomTemperature?: number;
   totalVoltage?: number;       // Tensão_Total
@@ -180,6 +181,8 @@ export interface BatteryLastReading {
   battery: Battery;
   measurement?: Measurement;
   status: BatteryStatus;
+  voltageStatus?: BatteryStatus;
+  resistanceStatus?: BatteryStatus;
   voltage: number;
   resistance: number;
   current: number;

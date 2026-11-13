@@ -234,6 +234,10 @@ export class DashboardService {
     const responsibleMap: Record<number, string> = {};
     responsibles.forEach((r) => { responsibleMap[r.id] = r.title; });
 
+    // Mapa de Sedes: ID → Sedes
+    const sedeMap: Record<number, Sedes> = {};
+    sedes.forEach((s) => { sedeMap[s.id] = s; });
+
     // Resolver locationTitle nas baterias via IDLocalId → locationMap
     batteries.forEach((bat) => {
       if (bat.locationId && locationMap[bat.locationId]) {
@@ -241,14 +245,21 @@ export class DashboardService {
       }
     });
 
+    // Mapa de activityId → primeiro locationId encontrado nas medições daquela atividade
+    const activityLocationMap: Record<number, number> = {};
+
     // Resolver batterySerialNumber nas medições via BateriaId → batteryMap
     measurements.forEach((m) => {
       if (m.batteryId && batteryMap[m.batteryId]) {
-        m.batterySerialNumber = batteryMap[m.batteryId].serialNumber;
+        const bat = batteryMap[m.batteryId];
+        m.batterySerialNumber = bat.serialNumber;
+        if (m.activityId && bat.locationId && !activityLocationMap[m.activityId]) {
+          activityLocationMap[m.activityId] = bat.locationId;
+        }
       }
     });
 
-    // Resolver responsibles nas atividades via ResponsaveisId → responsibleMap
+    // Resolver responsibles e metadados de local/sede nas atividades
     activities.forEach((a) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const rawActivity = a as any;
@@ -256,12 +267,39 @@ export class DashboardService {
       const respIds = rawActivity._responsaveisId;
       if (respIds !== undefined && respIds !== null) {
         if (Array.isArray(respIds)) {
-          a.responsibles = respIds
+          const resolved = respIds
             .map((id: number) => responsibleMap[id])
             .filter((name: string | undefined) => !!name) as string[];
+          if (resolved.length > 0) {
+            a.responsibles = resolved;
+          }
         } else if (typeof respIds === 'number' && responsibleMap[respIds]) {
           a.responsibles = [responsibleMap[respIds]];
         }
+      }
+
+      // Resolver Local (via KMId lookup ou via baterias medidas na atividade)
+      const resolvedLocId =
+        (typeof rawActivity._kmId === 'number' && locationMap[rawActivity._kmId]
+          ? rawActivity._kmId
+          : undefined) ?? activityLocationMap[a.id];
+
+      if (resolvedLocId !== undefined) {
+        a.locationId = resolvedLocId;
+        const loc = locationMap[resolvedLocId];
+        if (loc) {
+          if (!a.sede) a.sede = loc.sede;
+          if (!a.supervision) a.supervision = loc.supervisao;
+          if (!a.locationType) a.locationType = loc.locationType;
+          if (!a.km) a.km = String(loc.km);
+        }
+      }
+
+      // Fallback para Sede via SedeId lookup se ainda vazio
+      if (typeof rawActivity._sedeId === 'number' && sedeMap[rawActivity._sedeId]) {
+        const sedeObj = sedeMap[rawActivity._sedeId];
+        if (!a.sede) a.sede = sedeObj.title;
+        if (!a.supervision && sedeObj.supervisao) a.supervision = sedeObj.supervisao;
       }
     });
 

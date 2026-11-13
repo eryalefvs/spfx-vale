@@ -129,8 +129,8 @@ export function useDashboardFilters(
   }, [measurements, filters, filteredBatteryIds]);
 
   const filteredActivities = useMemo(() => {
-    return filterActivities(activities, filters);
-  }, [activities, filters]);
+    return filterActivities(activities, filters, filteredMeasurements);
+  }, [activities, filters, filteredMeasurements]);
 
   return useMemo(() => ({
     filters,
